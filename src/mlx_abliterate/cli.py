@@ -95,6 +95,41 @@ def parser() -> argparse.ArgumentParser:
     merge.add_argument("destination", type=Path)
     merge.add_argument("--edit-spec", required=True, type=Path)
     merge.add_argument("--output", type=Path)
+    heretic = commands.add_parser('heretic-benchmark',
+                                  help='Measure pinned Heretic keyword refusal rate through Ollama')
+    heretic.add_argument('model', help='Exact installed Ollama tag')
+    heretic.add_argument('dataset', type=Path, help='Ordered standard 100-prompt JSON file')
+    heretic.add_argument('config', type=Path, help='Pinned keyword and generation configuration JSON')
+    heretic.add_argument('run_dir', type=Path, help='Local resumable directory; contains private responses')
+    heretic.add_argument('--output', required=True, type=Path, help='New hash-only summary JSON path')
+    heretic.add_argument('--base-url', default='http://127.0.0.1:11434')
+    heretic.add_argument('--timeout', type=float, default=120.)
+    heretic.add_argument('--target-rate', type=float, default=.05)
+    prepare = commands.add_parser('heretic-prepare',
+        help='Download and verify pinned standard datasets and benchmark configuration')
+    prepare.add_argument('destination', type=Path, help='Local pinned dataset directory')
+    prepare.add_argument('--output', type=Path, help='New hash-only preparation report (default: stdout)')
+    standard_collect = commands.add_parser('heretic-collect',
+        help='Collect standard train400 contrast directions from a verified unchanged export')
+    standard_collect.add_argument('export', type=Path, help='Verified unchanged interchange export directory')
+    standard_collect.add_argument('dataset_directory', type=Path, help='Pinned standard dataset directory')
+    standard_collect.add_argument('destination', type=Path, help='New direction artifact directory')
+    standard_collect.add_argument('--no-orthogonalize', action='store_true',
+                                  help='Disable default orthogonalization against the harmless mean')
+    standard_collect.add_argument('--output', type=Path, help='New JSON report path (default: stdout)')
+    standard_search = commands.add_parser('heretic-search',
+        help='Search dynamic edits against generated keyword windows and capability checks')
+    for name, help_text in (
+            ('export', 'Verified unchanged interchange export directory'),
+            ('benchmark_dir', 'Pinned standard dataset/configuration directory'),
+            ('directions_dir', 'Completed standard direction artifact directory'),
+            ('capability_dataset', 'Local capability dataset JSONL'),
+            ('capability_rubrics', 'Local capability rubric JSON'),
+            ('run_dir', 'Resumable local search directory')):
+        standard_search.add_argument(name, type=Path, help=help_text)
+    standard_search.add_argument('--candidates', type=Path, help='Optional fixed candidate list JSON')
+    standard_search.add_argument('--shortlist-size', type=int, default=3)
+    standard_search.add_argument('--output', type=Path, help='New JSON report path (default: stdout)')
     for name in ('generate', 'evaluate-nll'):
         sub = commands.add_parser(name, help='Bounded local generation' if name == 'generate'
                                   else 'Teacher-forced continuation likelihood')
@@ -139,6 +174,23 @@ def main(argv: list[str] | None = None) -> int:
                          "num_ctx": args.num_ctx},
                 environment=json.loads(args.environment.read_text()) if args.environment else None,
             )
+        elif args.command == 'heretic-benchmark':
+            from .heretic_benchmark import run
+            report = run(args.model, args.dataset, args.config, args.run_dir,
+                         base_url=args.base_url, timeout=args.timeout, target_rate=args.target_rate)
+        elif args.command == 'heretic-prepare':
+            from .heretic_data import prepare_standard_data
+            report = prepare_standard_data(args.destination)
+        elif args.command == 'heretic-collect':
+            from .heretic_collection import collect_standard
+            report = collect_standard(args.export, args.dataset_directory, args.destination,
+                                      orthogonalize=not args.no_orthogonalize)
+        elif args.command == 'heretic-search':
+            from .ablation_search import run_search, _json_file
+            candidates = _json_file(args.candidates)[0] if args.candidates else None
+            report = run_search(args.export, args.benchmark_dir, args.directions_dir,
+                                args.capability_dataset, args.capability_rubrics, args.run_dir,
+                                candidates=candidates, shortlist_size=args.shortlist_size)
         elif args.command == "merge":
             from .merge import merge_export, read_edit_spec
             spec, _ = read_edit_spec(args.edit_spec)
@@ -168,6 +220,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "baseline" and report.get("status") != "complete":
             return 2
         if args.command in {'generate', 'evaluate-nll'} and report.get('status') != 'completed':
+            return 2
+        if args.command == 'heretic-benchmark' and not report['summary']['keyword_rate_target_passed']:
+            return 2
+        if args.command == 'heretic-search' and not report.get('export_gate_passed'):
             return 2
         return 0
     except (ValueError, OSError, RuntimeError, ModuleNotFoundError) as exc:

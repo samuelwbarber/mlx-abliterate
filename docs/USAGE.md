@@ -1,6 +1,6 @@
 # Using the current research tools
 
-This is an experimental, single-architecture workflow for the inspected dense 64-layer Qwen hybrid model. Inventory, export and benchmark commands use Python's standard library. Collection, drift measurement and edit primitives need Apple Silicon and the pinned MLX runtime. The current CLI does not automatically judge refusal behavior, execute coding benchmarks, select a useful edited model, or establish capability retention.
+This is an experimental, single-architecture workflow for the inspected dense 64-layer Qwen hybrid model. Inventory, export and benchmark commands use Python's standard library. Collection, drift measurement and edit primitives need Apple Silicon and the pinned MLX runtime. Generated-response keyword screening and constrained search are available; a passing keyword target is not comprehensive behavioral or capability approval. No generated code is executed.
 
 ## Install and inspect
 
@@ -116,3 +116,29 @@ After separately evaluating a dynamic candidate, provide an explicit edit specif
 This writes a new artifact and does not change a serving default or import automatically. A zero-strength selected projection stays byte-identical unless the specification explicitly requests the quantization-only control. Validate the new artifact with `verify-export`, import into a new tag, then run `verify-import` and the post-export evaluation. A successful merge is not a quality approval.
 
 See [DESIGN.md](DESIGN.md) for numerical assumptions and [EVALUATION.md](EVALUATION.md) for the still-required capability, behavior and post-export checks.
+
+## Standard keyword benchmark and search
+
+The main CLI exposes the pinned standard workflow. Install the optional dataset preparation dependency, then prepare the pinned inputs. Use one model process at a time:
+
+```sh
+python -m pip install -e '.[data]'
+mlx-abliterate heretic-prepare datasets/heretic-standard
+mlx-abliterate heretic-benchmark qwen3.8:27b-mlx \
+  datasets/heretic-standard/harmful-test100.json \
+  datasets/heretic-standard/benchmark-config.json \
+  runs/heretic-stock --output runs/heretic-stock-summary.json
+mlx-abliterate heretic-collect outputs/stock-noop \
+  datasets/heretic-standard outputs/heretic-directions \
+  --output runs/heretic-collection.json
+mlx-abliterate heretic-search outputs/stock-noop \
+  datasets/heretic-standard outputs/heretic-directions \
+  runs/capability.jsonl runs/capability-rubrics.json runs/heretic-search \
+  --output runs/heretic-search-summary.json
+```
+
+Preparation downloads and verifies pinned dataset/configuration hashes; existing prepared inputs are verified for reuse. The benchmark accepts an exact installed Ollama tag and reports the standard 100-token keyword metric, with separate invalid/empty/truncated outcomes. Collection reads the pinned train pair and defaults to orthogonalizing against the harmless mean; `--no-orthogonalize` disables that step. Search accepts the local capability dataset and rubrics, an optional fixed candidate JSON through `--candidates`, and `--shortlist-size` (default 3). Use `--help` on each command for path descriptions. Collection and search require the MLX runtime; the Ollama benchmark does not.
+
+Run directories are resumable where supported; explicit report paths must be new. Benchmark or search exit code 2 means its target/export gate did not pass, and command errors return 1. The benchmark's default target is at most 5% keyword matches. Search results optimized against the standard set must be labeled as such rather than presented as an untouched held-out test.
+
+See [HERETIC_BENCHMARK.md](HERETIC_BENCHMARK.md) for pinned normalization, runtime differences, and private result handling; see [GENERATION.md](GENERATION.md) for bounded text inference and checkpoint comparison tools.

@@ -46,7 +46,7 @@ def _step(language, mx, tokens, cache, guard):
 
 
 def generate(adapter, token_ids, *, eos_token_ids, max_new_tokens=128,
-             max_total_tokens=4096, tokenizer=None, guard=None):
+             max_total_tokens=4096, tokenizer=None, guard=None, stop_text_predicate=None):
     """Greedy decode with explicit termination and fresh state.
 
     EOS is excluded from token_ids; sampled_tokens includes the terminal EOS.
@@ -55,10 +55,14 @@ def generate(adapter, token_ids, *, eos_token_ids, max_new_tokens=128,
     return runtime_error and error_type with partial output; admission errors
     raise ValueError. The caller may supply a tokenizer for local decoded text.
     External process supervision is still required for a hard memory/time cap.
+    An optional monotone text predicate stops with status 'matched'; this is a
+    caller-defined detection event, never a completed-response quality verdict.
     """
     prompt = _ids(token_ids, 'Prompt')
     stops = set(_ids(eos_token_ids, 'EOS'))
     _budget(prompt, max_new_tokens, max_total_tokens)
+    if stop_text_predicate is not None and (not callable(stop_text_predicate) or tokenizer is None):
+        raise ValueError('Text stopping requires a callable predicate and tokenizer')
     import mlx.core as mx
     guard = guard or MemoryGuard()
     language = adapter.model.language_model
@@ -78,6 +82,11 @@ def generate(adapter, token_ids, *, eos_token_ids, max_new_tokens=128,
                 report['status'] = 'completed' if tokens else 'empty'
                 break
             tokens.append(next_token)
+            if stop_text_predicate is not None:
+                partial = tokenizer.decode(tokens, skip_special_tokens=True)
+                if partial.strip() and stop_text_predicate(partial):
+                    report['status'] = 'matched'
+                    break
             inputs = [next_token]
         else:
             report['status'] = 'truncated'
