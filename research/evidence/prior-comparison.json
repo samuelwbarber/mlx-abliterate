@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-13",
+  "provenance": "Prior session measurement, not rerun for this plan. Raw metrics copied unchanged.",
+  "prompt": "Write a Python LRU cache class using OrderedDict, with get and put methods, capacity validation, and a short usage example. Return only Python code.",
+  "settings": {
+    "temperature": 0,
+    "thinking": false,
+    "output_token_cap": 256,
+    "ollama_num_ctx": 32768,
+    "concurrent_loaded_models": 1
+  },
+  "limitations": [
+    "One prompt; RANA one run, Ollama two runs.",
+    "Different weights, quantization, runtimes and speculative decoding paths.",
+    "Not a controlled attribution study or a quality comparison.",
+    "Generation was capped at 256 tokens; code completion/correctness was not assessed in this comparison."
+  ],
+  "measurements": {
+    "rana": {
+      "wall_seconds": 21.287,
+      "usage": {
+        "prompt_tokens": 42,
+        "completion_tokens": 256,
+        "total_tokens": 298,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "prompt_n": 42,
+        "cache_n": 0,
+        "predicted_n": 256,
+        "prompt_ms": 608.7998750008409,
+        "prompt_per_token_ms": 14.49523511906764,
+        "prompt_per_second": 68.98818762067253,
+        "predicted_ms": 20723.1146245017,
+        "predicted_per_token_ms": 80.94966650195977,
+        "predicted_per_second": 12.353355402344867,
+        "peak_memory": 27.586583526,
+        "draft_kind": "mtp",
+        "draft_rounds": 89,
+        "draft_n": 177,
+        "draft_n_accepted": 166
+      }
+    },
+    "ollama_0": {
+      "eval_count": 256,
+      "eval_duration": 5225118083,
+      "prompt_eval_count": 42,
+      "prompt_eval_duration": 185673625,
+      "load_duration": 2627913083,
+      "wall_seconds": 8.047,
+      "tokens_per_second": 48.99410806291629
+    },
+    "ollama_1": {
+      "eval_count": 256,
+      "eval_duration": 3928135792,
+      "prompt_eval_count": 42,
+      "prompt_eval_duration": 62344541,
+      "load_duration": 10644791,
+      "wall_seconds": 4.003,
+      "tokens_per_second": 65.17086311562011
+    }
+  }
+}

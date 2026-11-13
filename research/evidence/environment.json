@@ -1,0 +1,47 @@
+{
+  "captured_at_utc": "2026-11-13T22:28:57.772853+00:00",
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "cpu_cores": 18,
+    "gpu_cores": 20,
+    "unified_memory_bytes": 51539607552,
+    "recommended_gpu_working_set_bytes": 40200896512
+  },
+  "software": {
+    "macos": "27.2",
+    "ollama": "0.40.16",
+    "mlx": "0.32.4",
+    "mlx_vlm": "0.7.12"
+  },
+  "model": {
+    "tag": "qwen3.8:27b-mlx",
+    "local_manifest_sha256": "ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+    "base_manifest_digest": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+    "architecture": "Qwen3_5ForConditionalGeneration",
+    "hidden_size": 5120,
+    "layers": 64,
+    "full_attention_interval": 4,
+    "kv_heads": 4,
+    "head_dim": 256,
+    "vocab_size": 248320,
+    "mtp_tensors": [
+      "mtp.fc.weight",
+      "mtp.layers.0.input_layernorm.weight",
+      "mtp.layers.0.mlp.down_proj.weight",
+      "mtp.layers.0.mlp.gate_proj.weight",
+      "mtp.layers.0.mlp.up_proj.weight",
+      "mtp.layers.0.post_attention_layernorm.weight",
+      "mtp.layers.0.self_attn.k_norm.weight",
+      "mtp.layers.0.self_attn.k_proj.weight",
+      "mtp.layers.0.self_attn.o_proj.weight",
+      "mtp.layers.0.self_attn.q_norm.weight",
+      "mtp.layers.0.self_attn.q_proj.weight",
+      "mtp.layers.0.self_attn.v_proj.weight",
+      "mtp.norm.weight",
+      "mtp.pre_fc_norm_embedding.weight",
+      "mtp.pre_fc_norm_hidden.weight"
+    ],
+    "observed_quantization": "NVFP4 with U32 packed weights, U8 block scales and F32 global scales"
+  },
+  "scope": "Read-only inventory; no new inference or model edits performed for this planning repository."
+}
