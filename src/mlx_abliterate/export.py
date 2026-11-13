@@ -5,6 +5,8 @@ NVFP4 payloads use the ModelOpt naming accepted by Ollama v0.40.16.
 """
 from __future__ import annotations
 
+import ctypes
+import errno
 import hashlib
 import json
 import os
@@ -12,6 +14,7 @@ from pathlib import Path
 import shutil
 import struct
 import tempfile
+import sys
 
 from .inventory import blob_path, inspect_model, read_safetensors_header, resolve_model
 
@@ -170,6 +173,31 @@ def _modelfile(options):
     return '\n'.join(lines) + '\n'
 
 
+def _publish_directory(staging: Path, destination: Path) -> None:
+    """Atomically rename without replacing even an empty concurrent directory."""
+    if sys.platform == 'win32':
+        os.rename(staging, destination)  # Windows rename rejects existing dst.
+        return
+    library = ctypes.CDLL(None, use_errno=True)
+    if sys.platform == 'darwin' and hasattr(library, 'renamex_np'):
+        function = library.renamex_np
+        function.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+        function.restype = ctypes.c_int
+        result = function(os.fsencode(staging), os.fsencode(destination), 4)  # RENAME_EXCL
+    elif sys.platform.startswith('linux') and hasattr(library, 'renameat2'):
+        function = library.renameat2
+        function.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+        function.restype = ctypes.c_int
+        result = function(-100, os.fsencode(staging), -100, os.fsencode(destination), 1)  # NOREPLACE
+    else:
+        raise ExportError('Atomic exclusive directory rename is unavailable on this platform')
+    if result:
+        number = ctypes.get_errno()
+        if number in {errno.EEXIST, errno.ENOTEMPTY}:
+            raise FileExistsError(number, os.strerror(number), str(destination))
+        raise OSError(number, os.strerror(number), str(destination))
+
+
 def export_model(model: str, destination: Path, models_dir: Path | None = None) -> dict:
     """Atomically write a new interchange directory, using a fixed copy buffer.
 
@@ -230,7 +258,7 @@ def export_model(model: str, destination: Path, models_dir: Path | None = None) 
                 raise ExportError('Source blob changed during export')
         if destination.exists() or destination.is_symlink():
             raise FileExistsError(destination)
-        staging.rename(destination)
+        _publish_directory(staging, destination)
         return {'source_manifest_digest': inventory['manifest_digest'], 'tensor_count': len(records),
                 'shard_count': len(shards), 'validated_import': False, 'destination': str(destination)}
     except BaseException:

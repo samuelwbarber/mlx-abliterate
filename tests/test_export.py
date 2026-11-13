@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from mlx_abliterate.export import ExportError, export_model, plan_export, verify_import
+from mlx_abliterate.export import ExportError, export_model, plan_export, verify_import, _publish_directory
 from mlx_abliterate.inventory import read_safetensors_header
 
 
@@ -63,6 +63,16 @@ class ExportTests(unittest.TestCase):
         self.assertFalse((self.output / 'create-options.json').exists())
         self.assertTrue((self.output / '.mlx-abliterate/export-report.json').is_file())
         self.assertIn('PARSER """qwen3.5"""', (self.output / 'Modelfile').read_text())
+
+    def test_exclusive_publish_rejects_concurrent_empty_destination(self):
+        staging = self.base / 'staging'
+        staging.mkdir()
+        (staging / 'payload').write_text('keep')
+        self.output.mkdir()
+        with self.assertRaises(FileExistsError):
+            _publish_directory(staging, self.output)
+        self.assertEqual(list(self.output.iterdir()), [])
+        self.assertTrue((staging / 'payload').is_file())
 
     def test_destination_never_overwritten(self):
         self.output.mkdir()
