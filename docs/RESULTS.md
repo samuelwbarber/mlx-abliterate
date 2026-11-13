@@ -51,8 +51,16 @@ A separate run at the adapter's **4,096-token limit** also passed with collectio
 
 These runs support proceeding from the bounded synthetic prefill/collection gate to a small study. They do not establish long-generation stability or make the first-token drift score a behavioral/capability evaluator.
 
+## First experimental edited checkpoint
+
+A 13-candidate study selected strength 1.0 on layers 16–47, preserving every baseline-correct search and held-out answer. The dynamic candidate improved the small held-out answer count from 7/8 to 8/8 and increased refusal-continuation NLL from 1.1042 to 2.6788. These are a narrow authored diagnostic and a likelihood proxy, not observed refusal-rate reduction.
+
+The serialized checkpoint retains all 11/12 baseline-correct answers in the expanded final-plus-capability check. It loses the dynamic candidate's extra correct answer (12/12 before serialization). Its refusal-continuation NLL is 2.5504. Quantization-only control logits/results match stock exactly. Dynamic-to-serialized first-token KL is mean 0.1229, maximum 0.8731 across 16 rows; this drift is reported, not treated as zero.
+
+The separate Ollama tag `qwen3.8-abliterated:27b-mlx` passed 2,017-tensor import verification. Ten completed warm serving samples per model yielded medians 75.06 tokens/s stock and 76.65 edited, ratio 1.0212. Fixed stock-then-edited order and short prompts preclude claims of speed improvement or long-context performance. See [candidate details](CANDIDATE.md), [study evidence](../research/evidence/study-v1.json), and [checkpoint evidence](../research/evidence/checkpoint-comparison-v1.json).
+
 ## What is not yet established
 
-No held-out refusal reduction, coding retention, tool-use retention, edited-model serving speed, or optimal edit strength is claimed. A successful format round trip and small numerical tests do not answer those questions. Use disjoint user-supplied data and the evaluation protocol before selecting or deploying an edited checkpoint.
+No measured behavioral refusal-rate reduction, broad coding/tool-use retention, long-context edited-model serving speed, or optimal edit strength is claimed. A successful format round trip and small numerical tests do not answer those questions. Use disjoint user-supplied data and the evaluation protocol before selecting or deploying an edited checkpoint.
 
 Raw timing fields and content hashes, without prompts or responses, are in [the evidence directory](../research/evidence/).

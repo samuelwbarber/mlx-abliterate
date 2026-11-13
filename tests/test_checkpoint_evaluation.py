@@ -1,11 +1,12 @@
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from mlx_abliterate.checkpoint_evaluation import evaluate_checkpoint
+from mlx_abliterate.checkpoint_evaluation import evaluate_checkpoint, main
 
 try:
     import mlx.core as mx
@@ -24,6 +25,25 @@ class Guard:
 
 @unittest.skipIf(mx is None, 'MLX unavailable')
 class CheckpointTests(unittest.TestCase):
+    def test_relative_dynamic_export_passes_real_source_admission(self):
+        # Use the actual byte-preserving tiny export fixture, including receipt,
+        # shards and runtime metadata. Do not mock verify_export/_source_entries.
+        from test_merge import MergeExportTests
+        fixture = MergeExportTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        spec = fixture.base / 'edit.json'
+        spec.write_text(json.dumps(fixture.spec))
+        relative = Path(os.path.relpath(fixture.source, Path.cwd()))
+        self.assertFalse(relative.is_absolute())
+        data = SimpleNamespace(fingerprint='data', splits={'final': [], 'capability': []})
+        with patch('mlx_abliterate.checkpoint_evaluation.load_dataset_splits', return_value=data), \
+                patch('mlx_abliterate.checkpoint_evaluation.load_rubrics', return_value={'rubrics': {}, 'sha256': 'rubric'}), \
+                patch('mlx_abliterate.checkpoint_evaluation._tokenizer', side_effect=RuntimeError('admitted')) as tokenizer:
+            with self.assertRaisesRegex(RuntimeError, '^admitted$'):
+                evaluate_checkpoint(relative, 'data', 'rubric', edit_spec=spec)
+        tokenizer.assert_called_once_with(fixture.source.resolve())
+
     def test_all_capability_rows_hash_only_reports_and_logits(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -52,6 +72,23 @@ class CheckpointTests(unittest.TestCase):
             manifest = json.loads((root / 'logits/manifest.json').read_text())
             self.assertEqual(len(manifest['records']), 7)
             self.assertNotIn('PRIVATE PROMPT', json.dumps(report) + json.dumps(manifest))
-            verify.assert_called_once_with(root, require_unmodified=False)
+            verify.assert_called_once_with(root.resolve(), require_unmodified=False)
             with self.assertRaises(FileExistsError):
                 evaluate_checkpoint(root, 'data', 'rubric', logits_dir=root / 'logits')
+
+
+class CheckpointCliTests(unittest.TestCase):
+    def test_failed_run_leaves_explicit_report_and_reraises(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'failed.json'
+            arguments = ['export', 'data', 'rubrics', '--output', str(output)]
+            with patch('mlx_abliterate.checkpoint_evaluation.evaluate_checkpoint',
+                       side_effect=ValueError('private failure details')):
+                with self.assertRaisesRegex(ValueError, 'private failure details'):
+                    main(arguments)
+            self.assertEqual(json.loads(output.read_text()),
+                             {'schema_version': 1, 'status': 'failed', 'error_type': 'ValueError'})
+            with patch('mlx_abliterate.checkpoint_evaluation.evaluate_checkpoint') as run:
+                with self.assertRaises(FileExistsError):
+                    main(arguments)
+                run.assert_not_called()

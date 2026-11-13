@@ -28,7 +28,7 @@ def evaluate_checkpoint(export, dataset, rubric_file, *, edit_spec=None,
     import mlx.core as mx
     if type(max_new_tokens) is not int or not 1 <= max_new_tokens <= 1024:
         raise ValueError('max_new_tokens must be 1–1024')
-    export = Path(export)
+    export = Path(export).resolve()
     if logits_dir is not None:
         logits_dir = Path(logits_dir)
         if logits_dir.exists() or logits_dir.is_symlink():
@@ -123,10 +123,17 @@ def main(argv=None):
     # Reserve before loading; exclusive ownership also prevents concurrent runs
     # from publishing two evaluations as the same experiment.
     with args.output.open('x', encoding='utf-8') as stream:
-        report = evaluate_checkpoint(args.export, args.dataset, args.rubric_file,
-                                     edit_spec=args.edit_spec, logits_dir=args.logits_dir,
-                                     max_new_tokens=args.max_new_tokens)
-        json.dump(report, stream, indent=2, allow_nan=False)
+        try:
+            report = evaluate_checkpoint(args.export, args.dataset, args.rubric_file,
+                                         edit_spec=args.edit_spec, logits_dir=args.logits_dir,
+                                         max_new_tokens=args.max_new_tokens)
+            payload = json.dumps(report, indent=2, allow_nan=False)
+        except BaseException as error:
+            json.dump({'schema_version': 1, 'status': 'failed',
+                       'error_type': type(error).__name__}, stream, indent=2)
+            stream.write('\n')
+            raise
+        stream.write(payload)
         stream.write('\n')
     return 0 if report['status'] == 'completed' else 2
 

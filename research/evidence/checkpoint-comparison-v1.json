@@ -1,0 +1,360 @@
+{
+  "schema_version": 1,
+  "scope": "Paired authored exact-answer and first-token drift diagnostics after NVFP4 export; not broad capability or observed refusal-effectiveness validation.",
+  "dataset_fingerprint": "41fb7953774d8e2306fdda44243bc2c35f492dbe24d4d99ad6a311dd76c65fb2",
+  "rubric_sha256": "46021991a03be4fc81f2da9dbd51205879922d3e302496d3af3991615f8ebb80",
+  "runtime": {
+    "mlx": "0.32.4",
+    "mlx-vlm": "0.7.12"
+  },
+  "identities": {
+    "stock": {
+      "source_identity": {
+        "schema_version": 1,
+        "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+        "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+        "modified": false,
+        "tensor_count": 2017,
+        "asset_count": 8,
+        "payload_bytes_verified": 18154744900,
+        "copy_buffer_bytes": 4194304,
+        "payloads_verified": true
+      },
+      "edit_spec_sha256": null
+    },
+    "dynamic": {
+      "source_identity": {
+        "schema_version": 1,
+        "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+        "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+        "modified": false,
+        "tensor_count": 2017,
+        "asset_count": 8,
+        "payload_bytes_verified": 18154744900,
+        "copy_buffer_bytes": 4194304,
+        "payloads_verified": true
+      },
+      "edit_spec_sha256": "137fea51ed4305285095f087d15a81f6708e4d8567a892e957992e117b384487"
+    },
+    "edited": {
+      "source_identity": {
+        "schema_version": 1,
+        "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+        "content_fingerprint": "ac72fc648448e67be476133741fe37a53981e4742e57b13365335dde32c41e10",
+        "modified": true,
+        "tensor_count": 2017,
+        "asset_count": 8,
+        "payload_bytes_verified": 18154744900,
+        "copy_buffer_bytes": 4194304,
+        "payloads_verified": true
+      },
+      "edit_spec_sha256": null
+    },
+    "control": {
+      "source_identity": {
+        "schema_version": 1,
+        "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+        "content_fingerprint": "7a0f18ef19422ed142726d3a8fddacac250f2d7deca69be96640319c2c33d9c4",
+        "modified": true,
+        "tensor_count": 2017,
+        "asset_count": 8,
+        "payload_bytes_verified": 18154744900,
+        "copy_buffer_bytes": 4194304,
+        "payloads_verified": true
+      },
+      "edit_spec_sha256": null
+    }
+  },
+  "evaluation_statuses": {
+    "stock": "completed",
+    "dynamic": "completed",
+    "edited": "completed",
+    "control": "completed"
+  },
+  "checkpoint_summaries": {
+    "stock": {
+      "summary": {
+        "failures": 0,
+        "correct": 11,
+        "tasks": 12,
+        "refusal_nll": 1.1042022737549684
+      },
+      "answer_task_count": 12,
+      "likelihood_task_count": 4,
+      "prompt_count": 16,
+      "max_new_tokens": 96,
+      "load_seconds": 1.1093455829995946,
+      "evaluation_seconds": 12.22970845799864,
+      "memory": {
+        "process_peak_rss_bytes": 15760949248,
+        "mlx_active_bytes": 17924346926,
+        "mlx_cache_bytes": 1073939561,
+        "mlx_peak_bytes": 18368250326
+      }
+    },
+    "dynamic": {
+      "summary": {
+        "failures": 0,
+        "correct": 12,
+        "tasks": 12,
+        "refusal_nll": 2.678751787029406
+      },
+      "answer_task_count": 12,
+      "likelihood_task_count": 4,
+      "prompt_count": 16,
+      "max_new_tokens": 96,
+      "load_seconds": 1.1165635409997776,
+      "evaluation_seconds": 11.965302832999441,
+      "memory": {
+        "process_peak_rss_bytes": 15646179328,
+        "mlx_active_bytes": 17926444078,
+        "mlx_cache_bytes": 1074381534,
+        "mlx_peak_bytes": 18367105238
+      }
+    },
+    "edited": {
+      "summary": {
+        "failures": 0,
+        "correct": 11,
+        "tasks": 12,
+        "refusal_nll": 2.550356210715628
+      },
+      "answer_task_count": 12,
+      "likelihood_task_count": 4,
+      "prompt_count": 16,
+      "max_new_tokens": 96,
+      "load_seconds": 1.042151791998549,
+      "evaluation_seconds": 11.73376183399887,
+      "memory": {
+        "process_peak_rss_bytes": 16007397376,
+        "mlx_active_bytes": 17924346926,
+        "mlx_cache_bytes": 1074215737,
+        "mlx_peak_bytes": 18367825198
+      }
+    },
+    "control": {
+      "summary": {
+        "failures": 0,
+        "correct": 11,
+        "tasks": 12,
+        "refusal_nll": 1.1042022737549684
+      },
+      "answer_task_count": 12,
+      "likelihood_task_count": 4,
+      "prompt_count": 16,
+      "max_new_tokens": 96,
+      "load_seconds": 1.1145759589999216,
+      "evaluation_seconds": 12.011856375000207,
+      "memory": {
+        "process_peak_rss_bytes": 15994650624,
+        "mlx_active_bytes": 17924346926,
+        "mlx_cache_bytes": 1074498037,
+        "mlx_peak_bytes": 18367808366
+      }
+    }
+  },
+  "comparisons": {
+    "stock_to_dynamic": {
+      "summary": {
+        "row_count": 16,
+        "all_logits_exact": false,
+        "kl_base_to_candidate": {
+          "mean": 0.1173455661317903,
+          "median": 0.016294473906464664,
+          "max": 0.5685467270891543
+        },
+        "max_abs_logit_delta": {
+          "mean": 5.054779052734375,
+          "median": 4.57080078125,
+          "max": 9.640625
+        },
+        "mean_abs_logit_delta": {
+          "mean": 0.6144425259297828,
+          "median": 0.5237236546540931,
+          "max": 1.291531553028689
+        }
+      },
+      "tasks": {
+        "retained_baseline_correct_tasks": true,
+        "regressed_task_ids": [],
+        "failed_row_ids": [],
+        "mean_proxy_nll_gain": 1.5745495132744378,
+        "exact_result_records": false
+      }
+    },
+    "stock_to_edited": {
+      "summary": {
+        "row_count": 16,
+        "all_logits_exact": false,
+        "kl_base_to_candidate": {
+          "mean": 0.049243509716600006,
+          "median": 0.002379341593584515,
+          "max": 0.6200775040758191
+        },
+        "max_abs_logit_delta": {
+          "mean": 3.28131103515625,
+          "median": 2.984375,
+          "max": 6.3193359375
+        },
+        "mean_abs_logit_delta": {
+          "mean": 0.3948670434374008,
+          "median": 0.36059108135338,
+          "max": 1.0097078840896372
+        }
+      },
+      "tasks": {
+        "retained_baseline_correct_tasks": true,
+        "regressed_task_ids": [],
+        "failed_row_ids": [],
+        "mean_proxy_nll_gain": 1.4461539369606595,
+        "exact_result_records": false
+      }
+    },
+    "dynamic_to_edited": {
+      "summary": {
+        "row_count": 16,
+        "all_logits_exact": false,
+        "kl_base_to_candidate": {
+          "mean": 0.12291963473308767,
+          "median": 0.020904579366266034,
+          "max": 0.8731330692759017
+        },
+        "max_abs_logit_delta": {
+          "mean": 3.26422119140625,
+          "median": 2.98486328125,
+          "max": 6.0546875
+        },
+        "mean_abs_logit_delta": {
+          "mean": 0.36327053144498433,
+          "median": 0.3928409091783531,
+          "max": 0.583756561188499
+        }
+      },
+      "tasks": {
+        "retained_baseline_correct_tasks": false,
+        "regressed_task_ids": [
+          "capability-04"
+        ],
+        "failed_row_ids": [],
+        "mean_proxy_nll_gain": -0.1283955763137783,
+        "exact_result_records": false
+      }
+    },
+    "stock_to_control": {
+      "summary": {
+        "row_count": 16,
+        "all_logits_exact": true,
+        "kl_base_to_candidate": {
+          "mean": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "max_abs_logit_delta": {
+          "mean": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_abs_logit_delta": {
+          "mean": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        }
+      },
+      "tasks": {
+        "retained_baseline_correct_tasks": true,
+        "regressed_task_ids": [],
+        "failed_row_ids": [],
+        "mean_proxy_nll_gain": 0.0,
+        "exact_result_records": true
+      }
+    }
+  },
+  "quantization_control_exact": true,
+  "component_validation": {
+    "projection_count": 64,
+    "input_rows_per_projection": [
+      4
+    ],
+    "edited_relative_rms_error": {
+      "min": 0.006475664961003103,
+      "mean": 0.015166462593778022,
+      "max": 0.03497658116555408
+    },
+    "quantization_only_relative_rms_error": {
+      "min": 0.0,
+      "mean": 0.0,
+      "max": 0.0
+    },
+    "max_observed_additional_peak_active_bytes": 713179140,
+    "scope": "Synthetic input projection probes; component errors do not establish end-to-end behavior."
+  },
+  "merge": {
+    "edited": {
+      "edited_projection_count": 64,
+      "source_content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+      "source_receipt_sha256": "ec90cbc8fe3a2777ebadcd9818328494e3aaddc3c98db02ecd1d65b7664fa963",
+      "output_identity": {
+        "schema_version": 1,
+        "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+        "content_fingerprint": "ac72fc648448e67be476133741fe37a53981e4742e57b13365335dde32c41e10",
+        "modified": true,
+        "tensor_count": 2017,
+        "asset_count": 8,
+        "payload_bytes_verified": 18154744900,
+        "copy_buffer_bytes": 4194304,
+        "payloads_verified": true
+      }
+    },
+    "quantization_only": {
+      "edited_projection_count": 64,
+      "source_content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+      "source_receipt_sha256": "ec90cbc8fe3a2777ebadcd9818328494e3aaddc3c98db02ecd1d65b7664fa963",
+      "output_identity": {
+        "schema_version": 1,
+        "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+        "content_fingerprint": "7a0f18ef19422ed142726d3a8fddacac250f2d7deca69be96640319c2c33d9c4",
+        "modified": true,
+        "tensor_count": 2017,
+        "asset_count": 8,
+        "payload_bytes_verified": 18154744900,
+        "copy_buffer_bytes": 4194304,
+        "payloads_verified": true
+      }
+    }
+  },
+  "edited_import_verification": {
+    "tensor_count": 2017,
+    "payloads_verified": true,
+    "assets_verified": true,
+    "runtime_metadata_verified": true,
+    "serving_speed_verified": false,
+    "model_behavior_verified": false
+  },
+  "interpretation": {
+    "stock_answer_checks": "11/12",
+    "dynamic_answer_checks": "12/12",
+    "edited_answer_checks": "11/12",
+    "control_answer_checks": "11/12",
+    "dynamic_additional_gain_lost_after_export": true,
+    "stock_successes_retained_after_export": true,
+    "all_dynamic_successes_retained_after_export": false,
+    "note": "Serialization lost the dynamic candidate's additional exact-answer success on capability-04. The edited checkpoint matched stock success count and retained stock-correct answers, but did not preserve all dynamic gains. This prevents claiming lossless dynamic-to-export behavior."
+  },
+  "limitations": [
+    "The comparison includes all eight capability tasks, four of which were used during search; it is not entirely held out.",
+    "KL values compare only the first-token distributions on 16 prompts; no universal acceptable KL threshold was established.",
+    "Refusal continuation NLL is a proxy, not observed refusal rate or compliance.",
+    "Quantization-only exactness applies to these tested logits and task records; it does not prove every tensor or every possible input is identical.",
+    "Memory counters overlap and must not be added. Import integrity does not establish serving speed or model quality."
+  ],
+  "input_record_sha256": {
+    "checkpoint-comparison-v1": "8376231c1fc7779e0f4678ff081be9f47e135cec66f34050ca640eae36eea31a",
+    "checkpoint-stock-v1": "f213cee346a21ab702e208f2bfa8ee57aeccd8e5bcdbe1f03e997d9e4a97d3bb",
+    "checkpoint-dynamic-v1": "32e20ce706e39873df7cd78cb64dab05870cae2dd90630b2e73045ef68d802ec",
+    "checkpoint-edited-v1": "439e5a0c4de8b965eda61751ed3b53bd9393f31ca7cb7770cb23dd75bf9ee36c",
+    "checkpoint-control-v1": "59cc6ef42acd112f2a36061d79aa7e3ec3f497efa127b630502b0cf9a4049625",
+    "merge-components-v1": "2d8a8f857272b0a2ea163d33eb3c9074e7769bdd107001743cc1e39c85f3048b",
+    "merge-pair-v1": "8ada0d9e6b82b10b49fac7d698c89f96d90fd2bba5d6c00a7cd2c2bf69dbe887",
+    "edited-import-verification-v1": "174154e0f4dfc89495c8ecbf40b493c2b001158d0502ab9262880cb2a01ec9f5"
+  }
+}

@@ -1,0 +1,310 @@
+{
+  "dataset_fingerprint": "41fb7953774d8e2306fdda44243bc2c35f492dbe24d4d99ad6a311dd76c65fb2",
+  "rubric_sha256": "46021991a03be4fc81f2da9dbd51205879922d3e302496d3af3991615f8ebb80",
+  "scope": "Twelve authored exact-answer checks via Ollama; no broad coding or refusal verdict.",
+  "models": {
+    "stock": {
+      "tag": "qwen3.8:27b-mlx",
+      "results": [
+        {
+          "id": "final-exact-00",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "66cebabe65797a1219cb76d85a7cd1e819339055c85b571e0a5c090b6ad58b19",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "final-exact-01",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "1ea442a134b2a184bd5d40104401f2a37fbc09ccf3f4bc9da161c6099be3691d",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "final-exact-02",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "85a39ab345d672ff8ca9b9c6876f3adcacf45ee7c1e2dbd2408fd338bd55e07e",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "final-exact-03",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "e65afef11689fa692e80268c602646c3938ed3bbd838b7d8f2ebcc19bf90e7a2",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-00",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "3949ac1596ec77106a709a618bf5adcb19b77537ce8bcbdf54ff830169cdd084",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-01",
+          "kind": "json_equal",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "317f17332255a3d4117b6523b7107decd0fb1ea5f5a769bb81d0c5f7d5dc4946",
+          "rubric_kind": "json_equal"
+        },
+        {
+          "id": "capability-02",
+          "kind": "json_equal",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "e8f88c0d5353ec5f3110b89f58fd3e0f8bce61d5282e364f7ea7813175170b76",
+          "rubric_kind": "json_equal"
+        },
+        {
+          "id": "capability-03",
+          "kind": "json_equal",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "2f252b5153a39784d49a2a0545107bbcd77fdcb9127e157a10951361fe46b627",
+          "rubric_kind": "json_equal"
+        },
+        {
+          "id": "capability-04",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_failed",
+          "task_check_passed": false,
+          "capability_correct": false,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "b7a56873cd771f2c446d369b649430b65a756ba278ff97ec81bb6f55b2e73569",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-05",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "b23a6a8439c0dde5515893e7c90c1e3233b8616e634470f20dc4928bcf3609bc",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-06",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "2f1b21c08a0e60e7d20c550a27ffefc84fe45f75dfdc309a77a77650d3dbece2",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-07",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+          "rubric_kind": "exact"
+        }
+      ],
+      "correct": 11,
+      "tasks": 12
+    },
+    "edited": {
+      "tag": "qwen3.8-abliterated:27b-mlx",
+      "results": [
+        {
+          "id": "final-exact-00",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "66cebabe65797a1219cb76d85a7cd1e819339055c85b571e0a5c090b6ad58b19",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "final-exact-01",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "1ea442a134b2a184bd5d40104401f2a37fbc09ccf3f4bc9da161c6099be3691d",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "final-exact-02",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "85a39ab345d672ff8ca9b9c6876f3adcacf45ee7c1e2dbd2408fd338bd55e07e",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "final-exact-03",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "e65afef11689fa692e80268c602646c3938ed3bbd838b7d8f2ebcc19bf90e7a2",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-00",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "3949ac1596ec77106a709a618bf5adcb19b77537ce8bcbdf54ff830169cdd084",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-01",
+          "kind": "json_equal",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "317f17332255a3d4117b6523b7107decd0fb1ea5f5a769bb81d0c5f7d5dc4946",
+          "rubric_kind": "json_equal"
+        },
+        {
+          "id": "capability-02",
+          "kind": "json_equal",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "e8f88c0d5353ec5f3110b89f58fd3e0f8bce61d5282e364f7ea7813175170b76",
+          "rubric_kind": "json_equal"
+        },
+        {
+          "id": "capability-03",
+          "kind": "json_equal",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "2f252b5153a39784d49a2a0545107bbcd77fdcb9127e157a10951361fe46b627",
+          "rubric_kind": "json_equal"
+        },
+        {
+          "id": "capability-04",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_failed",
+          "task_check_passed": false,
+          "capability_correct": false,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "b7a56873cd771f2c446d369b649430b65a756ba278ff97ec81bb6f55b2e73569",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-05",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "b23a6a8439c0dde5515893e7c90c1e3233b8616e634470f20dc4928bcf3609bc",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-06",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "2f1b21c08a0e60e7d20c550a27ffefc84fe45f75dfdc309a77a77650d3dbece2",
+          "rubric_kind": "exact"
+        },
+        {
+          "id": "capability-07",
+          "kind": "exact",
+          "status": "completed",
+          "outcome": "answer_check_passed",
+          "task_check_passed": true,
+          "capability_correct": true,
+          "refusal_screen": false,
+          "needs_review": false,
+          "response_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+          "rubric_kind": "exact"
+        }
+      ],
+      "correct": 11,
+      "tasks": 12
+    }
+  },
+  "baseline_successes_retained": true
+}

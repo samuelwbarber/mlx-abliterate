@@ -1,0 +1,24 @@
+{
+  "status": "pass",
+  "reasons": [],
+  "minimum_ratio": 0.9,
+  "decode_ratio": 1.0212034611437952,
+  "baseline_median": 75.06084457259388,
+  "candidate_median": 76.65239427390932,
+  "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+  "schema_version": 1,
+  "completed_warm_samples_per_model": 10,
+  "prompt_count": 2,
+  "context_limit": 4096,
+  "output_limit": 256,
+  "thinking": false,
+  "run_order": [
+    "stock",
+    "edited"
+  ],
+  "limitations": [
+    "Short coding prompts only; no code execution.",
+    "Fixed run order, no isolated thermal/power or MTP acceptance measurement.",
+    "Throughput pass does not establish quality or all-context performance."
+  ]
+}

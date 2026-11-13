@@ -2,9 +2,17 @@
 
 Research and build plan for modifying a quantized 27B language model on a 48 GB Apple Silicon Mac, while preserving its usefulness for coding and its fast Ollama deployment.
 
-**Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, bounded generation, a gated small-study runner, resumable trials, and selected-projection merging are implemented. There is no validated abliterated 27B checkpoint or claim of preserved coding quality yet. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
+**Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, bounded generation, a gated small-study runner, resumable trials, and selected-projection merging are implemented. An experimental edited 27B checkpoint has been exported and imported locally as `qwen3.8-abliterated:27b-mlx`. It passed the small diagnostic answer-retention and short serving gates; broad refusal reduction and coding quality are not established. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
 
 The first target is the user's existing `qwen3.8:27b-mlx`: Qwen3.8-27B in Ollama's NVFP4 format, on an M5 Pro with 20 GPU cores. A prior same-prompt comparison measured 65.17 generated tokens/s on its warmed Ollama run, versus 12.35 tokens/s for a different RANA 6-bit checkpoint in `mlx-vlm`. Those results motivate preserving the existing serving path; they do not isolate the cause of the difference or establish relative quality.
+
+## Local experimental model
+
+```sh
+ollama run qwen3.8-abliterated:27b-mlx
+```
+
+This tag is installed on the development Mac; it is not a public model download. The original `qwen3.8:27b-mlx` remains intact. The candidate removes the collected direction at strength 1.0 from 64 output projections in layers 16–47. See [candidate results](docs/CANDIDATE.md) for its evidence and limitations.
 
 ## Approach
 

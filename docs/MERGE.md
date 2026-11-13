@@ -1,6 +1,6 @@
 # Bounded NVFP4 merge
 
-`mlx_abliterate.merge` implements a matrix-at-a-time writer for an already validated no-op export. It is tested on small matrices and synthetic checkpoints. It has **not** merged or validated a full edited 27B checkpoint. Coding/tool retention, effective refusal behavior and serving speed remain separate gates.
+`mlx_abliterate.merge` implements a matrix-at-a-time writer for an already validated no-op export. It is tested on small matrices and synthetic checkpoints. A full edited 27B checkpoint and its matched quantization-only control have now been merged, verified, and evaluated; see [candidate results](CANDIDATE.md). Coding/tool retention, effective refusal behavior and serving speed remain separate gates.
 
 ## Input contract
 
