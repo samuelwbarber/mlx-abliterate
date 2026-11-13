@@ -57,6 +57,20 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(len(result['blobs']), 3)
         self.assertNotIn(str(self.root), json.dumps(result))
 
+    def test_duplicate_header_key_rejected(self):
+        header = b'{"x":{"dtype":"F32","shape":[1],"data_offsets":[0,4]},"x":{"dtype":"F32","shape":[1],"data_offsets":[0,4]}}'
+        path = self.root / 'duplicate.safetensors'
+        path.write_bytes(struct.pack('<Q', len(header)) + header + bytes(4))
+        with self.assertRaisesRegex(InventoryError, 'Duplicate JSON'):
+            read_safetensors_header(path)
+
+    def test_unknown_quantization_metadata_rejected(self):
+        descriptor = self.tensor()
+        header = read_safetensors_header(blob_path(self.root, descriptor['digest']))
+        header['__metadata__']['group_size'] = '32'
+        with self.assertRaisesRegex(InventoryError, 'metadata'):
+            tensor_layout(header, descriptor['name'])
+
     def test_v2_manifest_preferred_and_digest_checked(self):
         original = self.manifest([self.tensor()])
         newer = dict(original, layers=[])

@@ -48,7 +48,7 @@ class MemoryGuard:
     def configure(self, mx):
         if not mx.metal.is_available():
             raise RuntimeError("Metal GPU required; CPU fallback is not supported")
-        info = mx.metal.device_info()
+        info = mx.device_info()
         recommended = info.get("max_recommended_working_set_size")
         effective = min(self.allocator_limit_bytes, recommended) if recommended else self.allocator_limit_bytes
         mx.set_memory_limit(effective)

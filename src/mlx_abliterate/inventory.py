@@ -30,6 +30,15 @@ class InventoryError(ValueError):
     """Malformed, unsupported, or inconsistent local model artifact."""
 
 
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise InventoryError('Duplicate JSON object key')
+        result[key] = value
+    return result
+
+
 def _inside(root: Path, path: Path) -> Path:
     resolved = path.resolve()
     if not resolved.is_relative_to(root.resolve()):
@@ -99,7 +108,7 @@ def _json_bytes(path: Path, digest: str | None = None) -> tuple[Any, str]:
     if digest is not None and digest != actual:
         raise InventoryError(f'Metadata content hash mismatch: {digest}')
     try:
-        return json.loads(data), actual
+        return json.loads(data, object_pairs_hook=_unique_object), actual
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise InventoryError('Invalid JSON metadata') from exc
 
@@ -115,7 +124,7 @@ def read_safetensors_header(path: Path) -> dict[str, Any]:
         if length < 2 or length > MAX_HEADER_BYTES or length > size - 8:
             raise InventoryError('Invalid or excessive Safetensors header length')
         try:
-            header = json.loads(stream.read(length))
+            header = json.loads(stream.read(length), object_pairs_hook=_unique_object)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise InventoryError('Invalid Safetensors JSON header') from exc
     if not isinstance(header, dict) or not header:
@@ -163,6 +172,9 @@ def tensor_layout(header: dict, name: str) -> tuple[str, list[int]]:
         return 'none', tensor['shape']
     if quant != 'nvfp4':
         raise InventoryError(f'Unsupported quantization layout: {quant}')
+    metadata = header.get('__metadata__', {})
+    if metadata.get('group_size', '16') != '16' or set(metadata) - {'quant_type', 'group_size'}:
+        raise InventoryError('Unsupported NVFP4 quantization metadata')
     expected = {name, name + '.scale', name + '.global_scale'}
     if keys != expected or tensor['dtype'] != 'U32' or len(tensor['shape']) != 2:
         raise InventoryError(f'Unsupported NVFP4 packed weight layout: {name}')
