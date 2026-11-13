@@ -2,7 +2,7 @@
 
 Research and build plan for modifying a quantized 27B language model on a 48 GB Apple Silicon Mac, while preserving its usefulness for coding and its fast Ollama deployment.
 
-**Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, drift pilots, resumable trial primitives, and selected-projection merging are implemented. There is no validated abliterated 27B checkpoint or claim of preserved coding quality yet. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
+**Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, bounded generation, a gated small-study runner, resumable trials, and selected-projection merging are implemented. There is no validated abliterated 27B checkpoint or claim of preserved coding quality yet. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
 
 The first target is the user's existing `qwen3.8:27b-mlx`: Qwen3.8-27B in Ollama's NVFP4 format, on an M5 Pro with 20 GPU cores. A prior same-prompt comparison measured 65.17 generated tokens/s on its warmed Ollama run, versus 12.35 tokens/s for a different RANA 6-bit checkpoint in `mlx-vlm`. Those results motivate preserving the existing serving path; they do not isolate the cause of the difference or establish relative quality.
 
@@ -49,6 +49,8 @@ Optional numerical tests run when MLX is installed and otherwise skip. Linux CI 
 - [Research findings](docs/RESEARCH.md): source-code audit, existing approaches, and unresolved questions.
 - [Evaluation protocol](docs/EVALUATION.md): capability retention, refusal measurement, runtime comparisons, and ETA calculation.
 - [Sources](research/SOURCES.md): primary references and pinned source revisions.
+- [Generation](docs/GENERATION.md): bounded greedy inference and continuation scoring.
+- [Small study](docs/STUDY.md): disjoint data, proxy objectives and candidate acceptance gates.
 - [Stability probe](docs/STABILITY.md): bounded repeated-prefill validation and remaining memory gates.
 - [Local evidence](research/evidence/): hardware inventory and prior benchmark measurements, without credentials or device identifiers.
 
