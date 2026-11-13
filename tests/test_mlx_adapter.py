@@ -91,7 +91,7 @@ class NumericReferenceTests(unittest.TestCase):
             adapter.collect_last_hidden([1, 2])
         self.assertTrue(all(a is b for a, b in zip(layers, originals)))
 
-    @unittest.skipUnless(importlib.util.find_spec('mlx') is not None, 'Optional MLX runtime not installed')
+    @unittest.skipUnless(importlib.util.find_spec('mlx') is not None and importlib.util.find_spec('mlx_vlm') is not None, 'Optional MLX-VLM runtime not installed')
     def test_tiny_mlx_projection_matches_scalar_decode(self):
         name = 'projection.weight'
         header = {'__metadata__': {'quant_type': 'nvfp4'},

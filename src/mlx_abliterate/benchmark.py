@@ -74,6 +74,40 @@ def _json_request(url: str, payload: dict | None, timeout: float) -> dict:
     return result
 
 
+def _stream_events(response, start: float, timeout: float):
+    """Bound both framing memory and wall time, including trickling partial lines."""
+    buffer = bytearray()
+    received = 0
+    while True:
+        remaining = timeout - (time.monotonic() - start)
+        if remaining <= 0:
+            raise TimeoutError('request deadline exceeded')
+        # urllib exposes an HTTPResponse backed by a socket. Bound its next read
+        # to the remaining deadline, rather than restarting the full timeout.
+        try:
+            response.fp.raw._sock.settimeout(remaining)
+        except AttributeError:
+            pass  # Fixture/custom responses retain the original bounded timeout.
+        chunk = response.read1(8192)
+        if not chunk:
+            if buffer:
+                yield json.loads(buffer)
+            return
+        received += len(chunk)
+        if received > MAX_RESPONSE_BYTES:
+            raise ValueError('stream exceeds response size limit')
+        buffer.extend(chunk)
+        while b'\n' in buffer:
+            line, _, rest = buffer.partition(b'\n')
+            buffer = bytearray(rest)
+            if len(line) > MAX_LINE_BYTES:
+                raise ValueError('stream line exceeds size limit')
+            if line.strip():
+                yield json.loads(line)
+        if len(buffer) > MAX_LINE_BYTES:
+            raise ValueError('stream line exceeds size limit')
+
+
 def _measure(base_url: str, payload: dict, timeout: float) -> dict:
     start = time.monotonic()
     output = hashlib.sha256()
@@ -81,19 +115,9 @@ def _measure(base_url: str, payload: dict, timeout: float) -> dict:
     result: dict[str, Any] = {'status': 'runtime_error', 'first_token_seconds': None,
                               'final_answer_bytes': 0, 'thinking_bytes': 0}
     final = None
-    received = 0
     try:
         with _request(_endpoint(base_url, '/api/generate'), payload, timeout) as response:
-            while True:
-                if time.monotonic() - start > timeout:
-                    raise TimeoutError('request deadline exceeded')
-                line = response.readline(MAX_LINE_BYTES + 1)
-                if not line:
-                    break
-                received += len(line)
-                if len(line) > MAX_LINE_BYTES or received > MAX_RESPONSE_BYTES:
-                    raise ValueError('stream exceeds response size limit')
-                event = json.loads(line)
+            for event in _stream_events(response, start, timeout):
                 if not isinstance(event, dict) or 'error' in event:
                     raise ValueError('invalid or failed generation event')
                 for key, digest, counter in [('response', output, 'final_answer_bytes'),

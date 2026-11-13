@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+  "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+  "modified": false,
+  "tensor_count": 2017,
+  "asset_count": 8,
+  "payload_bytes_verified": 18154744900,
+  "copy_buffer_bytes": 4194304,
+  "payloads_verified": true,
+  "verification_seconds": 6.426972874999592
+}

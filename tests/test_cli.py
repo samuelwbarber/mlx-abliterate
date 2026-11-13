@@ -24,3 +24,11 @@ class ReportTests(unittest.TestCase):
         args = parser().parse_args(["inspect", "example:tag"])
         self.assertEqual(args.model, "example:tag")
         self.assertIsNone(args.models_dir)
+
+    def test_collect_and_pilot_parse(self):
+        args = parser().parse_args(['collect', 'export', 'data.jsonl', 'directions',
+                                   '--positive-group', 'a', '--negative-group', 'b'])
+        self.assertEqual(args.positive_group, 'a')
+        args = parser().parse_args(['pilot', 'export', 'data.jsonl', 'directions',
+                                   '--output', 'pilot.json'])
+        self.assertEqual(args.strengths, [0., .05, .1])

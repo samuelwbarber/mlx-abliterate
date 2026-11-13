@@ -292,3 +292,134 @@ def verify_import(model: str, export_directory: Path, models_dir: Path | None = 
     return {'model': model, 'tensor_count': len(tensors), 'payloads_verified': True,
             'assets_verified': True, 'runtime_metadata_verified': True,
             'serving_speed_verified': False, 'model_behavior_verified': False}
+
+
+def verify_export(export_directory: Path, *, require_unmodified: bool = False) -> dict:
+    """Verify local export bytes and return a content-based experiment identity.
+
+    This scans tensor payloads with a fixed 4 MiB buffer. The original manifest
+    digest alone is not an identity for a merged or locally modified checkpoint.
+    Every tensor, asset, runtime option, and Modelfile contributes to this digest.
+    Callers must keep the verified directory immutable until inference finishes.
+    """
+    root = Path(export_directory).resolve()
+
+    def local_file(relative):
+        path = (root / relative).resolve()
+        if not path.is_relative_to(root) or not path.is_file():
+            raise ExportError('Missing or escaping export file')
+        return path
+
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ExportError('Duplicate JSON key in export metadata')
+            result[key] = value
+        return result
+
+    def bounded_json(relative):
+        path = local_file(relative)
+        if path.stat().st_size > 32 * 1024 * 1024:
+            raise ExportError('Export metadata exceeds bounded size')
+        value = json.loads(path.read_bytes(), object_pairs_hook=pairs)
+        if not isinstance(value, dict):
+            raise ExportError('Expected export metadata object')
+        return value
+
+    def hash_range(path, offset=0, size=None):
+        size = path.stat().st_size if size is None else size
+        digest, remaining = hashlib.sha256(), size
+        with path.open('rb') as source:
+            source.seek(offset)
+            while remaining:
+                chunk = source.read(min(remaining, CHUNK_BYTES))
+                if not chunk:
+                    raise ExportError('Export file truncated during verification')
+                digest.update(chunk)
+                remaining -= len(chunk)
+        return digest.hexdigest()
+
+    receipt = bounded_json('.mlx-abliterate/export-report.json')
+    if receipt.get('schema_version') != 1 or not isinstance(receipt.get('source_manifest_digest'), str):
+        raise ExportError('Unsupported export receipt schema')
+    if require_unmodified and receipt.get('modified'):
+        raise ExportError('Collection and pilots require an unmodified no-op export')
+    index = bounded_json('model.safetensors.index.json').get('weight_map')
+    if not isinstance(index, dict) or not index or any(not isinstance(k, str) or not isinstance(v, str) for k, v in index.items()):
+        raise ExportError('Invalid export tensor index')
+    records = receipt.get('tensors')
+    if not isinstance(records, list) or any(not isinstance(r, dict) or not isinstance(r.get('name'), str) for r in records):
+        raise ExportError('Invalid export tensor receipts')
+    by_name = {record['name']: record for record in records}
+    if len(by_name) != len(records) or set(index) != set(by_name):
+        raise ExportError('Export receipt and tensor index disagree')
+    headers, bases, seen = {}, {}, set()
+    for shard in sorted(set(index.values())):
+        if Path(shard).name != shard or not shard.endswith('.safetensors'):
+            raise ExportError('Unsafe shard filename')
+        path = local_file(shard)
+        header = read_safetensors_header(path)
+        names = set(header) - {'__metadata__'}
+        if names & seen:
+            raise ExportError('Duplicate tensor across export shards')
+        seen.update(names)
+        headers[shard] = header
+        with path.open('rb') as source:
+            bases[shard] = 8 + struct.unpack('<Q', source.read(8))[0]
+    if seen != set(index):
+        raise ExportError('Export contains unindexed or missing tensors')
+    verified_tensors = []
+    for name in sorted(index):
+        shard = index[name]
+        descriptor = headers[shard].get(name)
+        record = by_name[name]
+        if descriptor is None:
+            raise ExportError('Tensor index references the wrong shard')
+        lo, hi = descriptor['data_offsets']
+        size = hi - lo
+        if descriptor['dtype'] != record.get('dtype') or descriptor['shape'] != record.get('shape') or size != record.get('size'):
+            raise ExportError('Export tensor shape/dtype/size differs from receipt')
+        actual = hash_range(local_file(shard), bases[shard] + lo, size)
+        if actual != record.get('payload_sha256'):
+            raise ExportError('Export tensor payload hash mismatch')
+        verified_tensors.append({'name': name, 'dtype': descriptor['dtype'], 'shape': descriptor['shape'],
+                                 'size': size, 'payload_sha256': actual})
+    assets = receipt.get('assets')
+    if not isinstance(assets, list):
+        raise ExportError('Invalid export asset receipts')
+    verified_assets, asset_names = [], set()
+    for asset in assets:
+        name = asset.get('name') if isinstance(asset, dict) else None
+        if not isinstance(name, str) or Path(name).name != name or name.startswith('.') or name in asset_names:
+            raise ExportError('Unsafe or duplicate export asset')
+        asset_names.add(name)
+        path = local_file(name)
+        size = path.stat().st_size
+        if size != asset.get('size'):
+            raise ExportError('Export asset size differs from receipt')
+        actual = hash_range(path)
+        if 'sha256:' + actual != asset.get('digest'):
+            raise ExportError('Export asset hash mismatch')
+        verified_assets.append({'name': name, 'size': size, 'sha256': actual})
+    allowed = asset_names | set(index.values()) | {'model.safetensors.index.json', 'Modelfile', '.mlx-abliterate'}
+    if {p.name for p in root.iterdir()} != allowed:
+        raise ExportError('Export contains undeclared files that could affect loading')
+    options = bounded_json('.mlx-abliterate/create-options.json')
+    modelfile = local_file('Modelfile')
+    if modelfile.stat().st_size > 32 * 1024 * 1024:
+        raise ExportError('Modelfile exceeds bounded size')
+    identity = {'schema_version': 1, 'source_manifest_digest': receipt['source_manifest_digest'],
+                'modified': bool(receipt.get('modified')), 'tensors': verified_tensors,
+                'assets': sorted(verified_assets, key=lambda item: item['name']),
+                'create_options_sha256': hash_range(local_file('.mlx-abliterate/create-options.json')),
+                'modelfile_sha256': hash_range(modelfile)}
+    # Parse options even though identity uses exact bytes, detecting malformed
+    # runtime metadata before consumers use it. No runtime fields are ignored.
+    del options
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+    return {'schema_version': 1, 'source_manifest_digest': receipt['source_manifest_digest'],
+            'content_fingerprint': fingerprint, 'modified': bool(receipt.get('modified')),
+            'tensor_count': len(verified_tensors), 'asset_count': len(verified_assets),
+            'payload_bytes_verified': sum(r['size'] for r in verified_tensors),
+            'copy_buffer_bytes': CHUNK_BYTES, 'payloads_verified': True}

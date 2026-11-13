@@ -2,15 +2,45 @@
 
 Research and build plan for modifying a quantized 27B language model on a 48 GB Apple Silicon Mac, while preserving its usefulness for coding and its fast Ollama deployment.
 
-**Status: early implementation.** Inventory, format fidelity, and benchmark tooling are under development. There is no completed ablation experiment or validated edited 27B model yet. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
+**Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, drift pilots, resumable trial primitives, and selected-projection merging are implemented. There is no validated abliterated 27B checkpoint or claim of preserved coding quality yet. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
 
 The first target is the user's existing `qwen3.8:27b-mlx`: Qwen3.8-27B in Ollama's NVFP4 format, on an M5 Pro with 20 GPU cores. A prior same-prompt comparison measured 65.17 generated tokens/s on its warmed Ollama run, versus 12.35 tokens/s for a different RANA 6-bit checkpoint in `mlx-vlm`. Those results motivate preserving the existing serving path; they do not isolate the cause of the difference or establish relative quality.
 
-## Proposed approach
+## Approach
 
 Keep the original quantized weights immutable during search. Evaluate small, reversible output-projection edits in MLX. Export only the selected modification through a bounded-memory writer, then use Ollama for everyday inference.
 
-The first implementation gate is an **unchanged-model round trip**. Before optimizing any refusal direction, demonstrate that the exact installed model can be inspected, represented correctly, and imported as a separate Ollama tag without losing its speed, template, tools, vision metadata, or speculative decoding support.
+The first implementation gate is an **unchanged-model round trip**. All 2,017 tensor payloads and runtime metadata survived export/import. Ten paired short-prompt outputs matched exactly; median warm decode was 67.68 tokens/s for stock and 70.76 for the round trip. This passes the initial short serving check, not the full tool/vision/long-context evaluation. [Measured results and limitations](docs/RESULTS.md).
+
+## Install and inspect
+
+Python 3.11 or newer. Read-only inventory, no-op export, and Ollama benchmarks use the standard library; Apple Silicon MLX is optional.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+mlx-abliterate inspect qwen3.8:27b-mlx --verify-payloads --output runs/inventory.json
+mlx-abliterate plan-export qwen3.8:27b-mlx
+```
+
+For model collection, edits, and merging on Apple Silicon, install `pip install -e '.[runtime]'`. Keep only one large model resident. Outputs and run records are excluded from Git.
+
+```bash
+mlx-abliterate export qwen3.8:27b-mlx outputs/stock-noop
+ollama create mlx-abliterate-noop:27b -f outputs/stock-noop/Modelfile
+mlx-abliterate verify-import mlx-abliterate-noop:27b outputs/stock-noop
+```
+
+Use a new tag for imports. Export destinations and reports refuse overwrites. See [usage and dataset requirements](docs/USAGE.md), [MLX fidelity](docs/MLX_FIDELITY.md), and [merge semantics](docs/MERGE.md) before running experiments. `pilot` reports first-token drift and timing; it does not automatically select a safe or capable checkpoint. The search module exposes a Python callback interface requiring an explicit evaluator.
+
+## Test
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Optional numerical tests run when MLX is installed and otherwise skip. Linux CI checks the standard-library paths; local Apple Silicon tests are required for numerical changes.
 
 ## Read the plan
 

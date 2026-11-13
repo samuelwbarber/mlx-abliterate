@@ -1,6 +1,6 @@
 # Technical design
 
-Proposed architecture, not an implemented or benchmarked system. The [research findings](RESEARCH.md) explain the evidence and unresolved compatibility questions.
+Design and acceptance targets. Parts are now implemented; [measured results](RESULTS.md) distinguish validated behavior from remaining experiments. The [research findings](RESEARCH.md) explain the original evidence and compatibility questions.
 
 ## Separate editing from serving
 

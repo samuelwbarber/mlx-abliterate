@@ -71,3 +71,17 @@ MLX's `set_memory_limit` is explicitly a guideline, not a hard memory cap. The a
 Further work must test longer contexts, multiple prompt lengths, real data collection, nonzero edits, generation trajectories, post-export quality, and allocation stability across repeated trials. Passing the zero-edit pilot is permission to investigate those stages, not a claim that the model has been successfully abliterated.
 
 The implementation invokes installed APIs and contains original orchestration and scalar test code. No upstream implementation has been copied. Relevant pinned sources and their licenses remain recorded in [SOURCES.md](../research/SOURCES.md).
+
+## End-to-end collection and drift smoke
+
+The real `collect` and `pilot` CLI commands subsequently passed on a tiny, entirely benign fixture contrasting formal and casual explanations. The direction split had one example per group, and the search split had one distinct question; final and capability splits were distinct and unused. This checks plumbing, not useful direction estimation or model quality.
+
+Collection took 6.51 seconds including startup/load, with 2.73 seconds recorded for statistics. The three-trial pilot took 6.40 seconds including startup/load. Strengths `0`, `0.05`, and `0.1` produced first-token `KL(base || candidate)` values `0`, `0.00234954`, and `0.00776785`. Individual trials took approximately 0.38, 0.25, and 0.25 seconds; these single-prompt scoring rates must not be extrapolated to generation or refusal optimization.
+
+MLX peak allocation was 18,257,958,244 bytes (about 17.00 GiB). Active allocations after the three trials were 17,920,087,198, 17,920,087,250, and 17,920,087,198 bytes, respectively. This short run showed an allocation plateau; it does not replace the planned longer repeated-trial test. Summary records are in ignored `runs/workflow-smoke.json`.
+
+## Experiment identity and integrity
+
+Collection and pilot entry points now stream-verify all indexed tensor payloads, shapes, dtypes, declared assets (including tokenizer/config files), and runtime metadata before loading. They reject edited exports as direction-extraction or pilot bases. The recorded content fingerprint includes actual tensor and asset hashes, the source manifest digest, create options, and Modelfile bytes. This prevents an ancestral manifest digest from making a changed or edited checkpoint appear identical during resume. Undeclared top-level files are rejected because they could alter tokenizer or model loading.
+
+A full verification of the local no-op artifact checked 2,017 tensors and eight assets in 6.43 seconds with a 4 MiB copy buffer. This verification is repeated at collection/pilot admission; the directory must remain immutable until the run finishes. The earlier mechanical pilot predates this additional identity field, so its direction artifact intentionally cannot resume under the strengthened guard without recollection. Guard integration was checked with tiny fixtures and actual full-artifact verification, without repeating the large-model pilot.

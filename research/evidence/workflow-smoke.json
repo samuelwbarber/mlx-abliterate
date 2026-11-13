@@ -1,0 +1,68 @@
+{
+  "purpose": "Benign formal-versus-casual mechanical smoke; no refusal or capability claim",
+  "commands": [
+    {
+      "command": "collect",
+      "exit_code": 0,
+      "seconds": 6.513871833999474
+    },
+    {
+      "command": "pilot",
+      "exit_code": 0,
+      "seconds": 6.3984669580004265
+    }
+  ],
+  "collection_seconds": 2.7265214999997625,
+  "collection_counts": {
+    "formal": 1,
+    "casual": 1
+  },
+  "trials": [
+    {
+      "strength": 0.0,
+      "kl_per_prompt": [
+        0.0
+      ],
+      "mean_kl": 0.0,
+      "wall_seconds": 0.37714416700055153,
+      "memory": {
+        "monotonic_seconds": 7702.385980083,
+        "process_peak_rss_bytes": 9970499584,
+        "mlx_active_bytes": 17920087198,
+        "mlx_cache_bytes": 353013391,
+        "mlx_peak_bytes": 18257958244
+      }
+    },
+    {
+      "strength": 0.05,
+      "kl_per_prompt": [
+        0.0023495429195463657
+      ],
+      "mean_kl": 0.0023495429195463657,
+      "wall_seconds": 0.2514741659997526,
+      "memory": {
+        "monotonic_seconds": 7702.637458416,
+        "process_peak_rss_bytes": 9970499584,
+        "mlx_active_bytes": 17920087250,
+        "mlx_cache_bytes": 363450987,
+        "mlx_peak_bytes": 18257958244
+      }
+    },
+    {
+      "strength": 0.1,
+      "kl_per_prompt": [
+        0.007767846807837486
+      ],
+      "mean_kl": 0.007767846807837486,
+      "wall_seconds": 0.24667058300019562,
+      "memory": {
+        "monotonic_seconds": 7702.884131958,
+        "process_peak_rss_bytes": 9970499584,
+        "mlx_active_bytes": 17920087198,
+        "mlx_cache_bytes": 363451039,
+        "mlx_peak_bytes": 18257958244
+      }
+    }
+  ],
+  "zero_kl": 0.0
+}

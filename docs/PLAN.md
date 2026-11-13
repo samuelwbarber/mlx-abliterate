@@ -2,7 +2,7 @@
 
 **Decision proposed:** build a narrow MLX research tool around the exact installed Qwen3.8-27B NVFP4 model, with immutable quantized weights during search and a separately tested Ollama export path. Start with directional ablation; add more elaborate methods only when measured results justify them.
 
-**Current status:** research and planning complete enough to define the first spikes; implementation has not started. All pass criteria below are proposed engineering gates, not achieved results.
+**Document status:** original staged plan, retained as the acceptance framework. Implementation is now underway; see [measured results](RESULTS.md) and [usage](USAGE.md) for what exists and which checks have passed. Criteria below are targets unless supported by those result records.
 
 ## Scope
 
@@ -99,4 +99,4 @@ Format incompatibility or a required new model adapter could expand those ranges
 
 ## Review point
 
-The next implementation task should be **Stage 0 plus the no-op format/serving spike**, not a Heretic fork, full 27B model expansion, or an overnight ablation run. The current repository intentionally stops at this plan.
+The next implementation task should be **Stage 0 plus the no-op format/serving spike**, not a Heretic fork, full 27B model expansion, or an overnight ablation run. Implementation now follows this sequence; the user subsequently authorized development and public incremental commits.

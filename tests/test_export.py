@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from mlx_abliterate.export import ExportError, export_model, plan_export, verify_import, _publish_directory
+from mlx_abliterate.export import ExportError, export_model, plan_export, verify_import, verify_export, _publish_directory
 from mlx_abliterate.inventory import read_safetensors_header
 
 
@@ -28,6 +28,7 @@ class ExportTests(unittest.TestCase):
                                 'application/vnd.ollama.image.tensor', 'model.weight')
         self.layers.append(self.tensor)
         self.layers.append(self.blob(b'{"model_type":"fixture"}', 'application/vnd.ollama.image.json', 'config.json'))
+        self.layers.append(self.blob(b'{"tokenizer_class":"fixture"}', 'application/vnd.ollama.image.json', 'tokenizer_config.json'))
         self.layers.append(self.blob(b'{"stop":["end"],"temperature":0}', 'application/vnd.ollama.image.params'))
         config = self.blob(b'{"renderer":"qwen3.8","parser":"qwen3.5","capabilities":["completion"]}', 'application/vnd.docker.container.image.v1+json')
         manifest = {'schemaVersion': 2, 'config': config, 'layers': self.layers}
@@ -104,6 +105,67 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(len(list(self.output.glob('*.safetensors'))), 2)
         index = json.loads((self.output / 'model.safetensors.index.json').read_text())
         self.assertEqual(len(index['weight_map']), 3)
+
+    def test_local_export_verification_and_content_identity(self):
+        export_model('fixture', self.output, self.root)
+        first = verify_export(self.output, require_unmodified=True)
+        self.assertTrue(first['payloads_verified'])
+        self.assertEqual(first['tensor_count'], 3)
+        self.assertEqual(first['asset_count'], 2)
+        self.assertEqual(first, verify_export(self.output, require_unmodified=True))
+        # Runtime options and Modelfile changes retain ancestral model identity,
+        # but must change the actual experiment fingerprint.
+        modelfile = self.output / 'Modelfile'
+        modelfile.write_text(modelfile.read_text() + '# changed runtime configuration\n')
+        second = verify_export(self.output)
+        self.assertEqual(first['source_manifest_digest'], second['source_manifest_digest'])
+        self.assertNotEqual(first['content_fingerprint'], second['content_fingerprint'])
+        options = self.output / '.mlx-abliterate/create-options.json'
+        options.write_text(options.read_text() + ' ')
+        self.assertNotEqual(second['content_fingerprint'], verify_export(self.output)['content_fingerprint'])
+
+    def test_corrupted_local_tensor_rejected(self):
+        export_model('fixture', self.output, self.root)
+        shard = next(self.output.glob('*.safetensors'))
+        with shard.open('r+b') as target:
+            target.seek(-1, 2)
+            old = target.read(1)
+            target.seek(-1, 2)
+            target.write(bytes([old[0] ^ 1]))
+        with self.assertRaisesRegex(ExportError, 'payload hash'):
+            verify_export(self.output)
+
+    def test_corrupted_tokenizer_rejected(self):
+        export_model('fixture', self.output, self.root)
+        path = self.output / 'tokenizer_config.json'
+        path.write_bytes(path.read_bytes().replace(b'fixture', b'changed'))
+        with self.assertRaisesRegex(ExportError, 'asset hash'):
+            verify_export(self.output)
+
+    def test_modified_checkpoint_rejected_for_collection(self):
+        export_model('fixture', self.output, self.root)
+        path = self.output / '.mlx-abliterate/export-report.json'
+        receipt = json.loads(path.read_text())
+        receipt['modified'] = True
+        path.write_text(json.dumps(receipt))
+        with self.assertRaisesRegex(ExportError, 'unmodified'):
+            verify_export(self.output, require_unmodified=True)
+        self.assertTrue(verify_export(self.output)['modified'])
+
+    def test_undeclared_asset_rejected(self):
+        export_model('fixture', self.output, self.root)
+        (self.output / 'tokenizer.model').write_bytes(b'untracked tokenizer')
+        with self.assertRaisesRegex(ExportError, 'undeclared'):
+            verify_export(self.output)
+
+    def test_changed_shape_and_index_disagreement_rejected(self):
+        export_model('fixture', self.output, self.root)
+        path = self.output / '.mlx-abliterate/export-report.json'
+        receipt = json.loads(path.read_text())
+        receipt['tensors'][0]['shape'] = [4, 1]
+        path.write_text(json.dumps(receipt))
+        with self.assertRaisesRegex(ExportError, 'shape/dtype/size'):
+            verify_export(self.output)
 
     def test_store_destination_rejected(self):
         with self.assertRaisesRegex(ExportError, 'outside'):

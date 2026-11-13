@@ -55,6 +55,10 @@ def parser() -> argparse.ArgumentParser:
     verify.add_argument("export_directory", type=Path)
     verify.add_argument("--models-dir", type=Path)
     verify.add_argument("--output", type=Path)
+    verify_export = commands.add_parser("verify-export", help="Verify local export bytes and content identity")
+    verify_export.add_argument("export_directory", type=Path)
+    verify_export.add_argument("--require-unmodified", action="store_true")
+    verify_export.add_argument("--output", type=Path)
     bench = commands.add_parser("baseline", help="Measure Ollama generation; does not execute generated code")
     bench.add_argument("model")
     bench.add_argument("--prompts", required=True, type=Path)
@@ -72,6 +76,25 @@ def parser() -> argparse.ArgumentParser:
     compare.add_argument("baseline", type=Path)
     compare.add_argument("candidate", type=Path)
     compare.add_argument("--output", type=Path)
+    collect = commands.add_parser("collect", help="Extract contrast directions from local, disjoint data")
+    collect.add_argument("export_directory", type=Path)
+    collect.add_argument("dataset", type=Path)
+    collect.add_argument("destination", type=Path)
+    collect.add_argument("--positive-group", required=True)
+    collect.add_argument("--negative-group", required=True)
+    collect.add_argument("--output", type=Path)
+    pilot = commands.add_parser("pilot", help="Measure first-token drift; does not select an edited model")
+    pilot.add_argument("export_directory", type=Path)
+    pilot.add_argument("dataset", type=Path)
+    pilot.add_argument("directions_directory", type=Path)
+    pilot.add_argument("--strengths", type=float, nargs='+', default=[0., .05, .1])
+    pilot.add_argument("--max-prompts", type=int, default=8)
+    pilot.add_argument("--output", type=Path, required=True)
+    merge = commands.add_parser("merge", help="Write explicitly selected NVFP4 edits to a new export")
+    merge.add_argument("export_directory", type=Path)
+    merge.add_argument("destination", type=Path)
+    merge.add_argument("--edit-spec", required=True, type=Path)
+    merge.add_argument("--output", type=Path)
     return result
 
 
@@ -84,6 +107,9 @@ def main(argv: list[str] | None = None) -> int:
             from .inventory import inspect_model
             report = inspect_model(args.model, models_dir=args.models_dir,
                                    verify_payloads=args.verify_payloads)
+        elif args.command == "verify-export":
+            from .export import verify_export
+            report = verify_export(args.export_directory, require_unmodified=args.require_unmodified)
         elif args.command == "verify-import":
             from .export import verify_import
             report = verify_import(args.model, args.export_directory, models_dir=args.models_dir)
@@ -103,6 +129,21 @@ def main(argv: list[str] | None = None) -> int:
                          "num_ctx": args.num_ctx},
                 environment=json.loads(args.environment.read_text()) if args.environment else None,
             )
+        elif args.command == "merge":
+            from .merge import merge_export
+            if args.edit_spec.stat().st_size > 8 * 1024 * 1024:
+                raise ValueError('Edit specification exceeds 8 MiB')
+            report = merge_export(args.export_directory, args.destination,
+                                  json.loads(args.edit_spec.read_text()))
+        elif args.command == "collect":
+            from .workflow import collect_directions
+            report = collect_directions(args.export_directory, args.dataset, args.destination,
+                                        positive_group=args.positive_group,
+                                        negative_group=args.negative_group)
+        elif args.command == "pilot":
+            from .workflow import drift_pilot
+            report = drift_pilot(args.export_directory, args.dataset, args.directions_directory,
+                                 strengths=args.strengths, max_prompts=args.max_prompts)
         else:
             from .benchmark import compare_reports
             report = compare_reports(json.loads(args.baseline.read_text()),
@@ -113,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "baseline" and report.get("status") != "complete":
             return 2
         return 0
-    except (ValueError, OSError, RuntimeError) as exc:
+    except (ValueError, OSError, RuntimeError, ModuleNotFoundError) as exc:
         print(f"mlx-abliterate: {exc}", file=sys.stderr)
         return 1
 

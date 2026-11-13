@@ -2,11 +2,13 @@ import copy
 import json
 import tempfile
 import threading
+import time
+from unittest.mock import patch
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from mlx_abliterate.benchmark import compare_reports, load_prompts, run_benchmark
+from mlx_abliterate.benchmark import compare_reports, load_prompts, run_benchmark, _stream_events
 
 
 class Server(BaseHTTPRequestHandler):
@@ -28,6 +30,15 @@ class Server(BaseHTTPRequestHandler):
         self.end_headers()
         if payload.get('keep_alive') == 0:
             self.wfile.write(b'{"done":true}')
+            return
+        if self.mode == 'trickle':
+            try:
+                for _ in range(100):
+                    self.wfile.write(b' ')
+                    self.wfile.flush()
+                    time.sleep(.01)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
             return
         if self.mode == 'error':
             self.wfile.write(b'{"error":"private server data"}\n')
@@ -106,6 +117,22 @@ class BenchmarkTests(unittest.TestCase):
         candidate = copy.deepcopy(report)
         candidate['samples'][0]['prompt_eval_count'] += 1
         self.assertEqual(compare_reports(report, candidate)['status'], 'inconclusive')
+
+    def test_trickling_unterminated_line_respects_deadline(self):
+        Server.mode = 'trickle'
+        started = time.monotonic()
+        report = run_benchmark('fixture:model', ['one'], base_url=self.url,
+                               repeats=1, warmups=1, timeout=.06)
+        self.assertLess(time.monotonic() - started, 1.)
+        self.assertEqual(report['samples'][0]['status'], 'timeout')
+
+    def test_partial_frame_is_bounded_without_newline(self):
+        class Response:
+            def read1(self, size):
+                return b'x' * 8
+        with patch('mlx_abliterate.benchmark.MAX_LINE_BYTES', 12):
+            with self.assertRaisesRegex(ValueError, 'line exceeds'):
+                list(_stream_events(Response(), time.monotonic(), 1))
 
     def test_prompt_file_and_validation(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -29,6 +29,16 @@ The first pilot loaded in 2.24 seconds and processed a 9-token prompt in 0.75 se
 
 An independent scalar decoder checked a representative stock NVFP4 group against MLX: maximum decode error `4.66e-10`, projection error `9.31e-10`. Tiny matrix tests also cover ordinary biases, affine quantization offsets, zero-strength identity, and CPU/GPU rounding differences.
 
+## End-to-end collection and drift pilot
+
+The actual CLI completed `collect` then `pilot` on the 27B model with two benign contrasting style prompts and one search prompt. This is a mechanical smoke test, not a refusal dataset. Collection took 6.51 seconds including startup/load; the three-trial pilot took 6.40 seconds including startup/load. Zero strength produced KL exactly zero. Strengths 0.05 and 0.1 produced first-token KL values approximately 0.00235 and 0.00777.
+
+MLX peak allocation was 18,257,958,244 bytes (17.00 GiB). Active allocations stayed approximately 17.92 GB across the three trials. This is too short a run to establish a long-study memory plateau or predict generation-heavy search time.
+
+## Largest-projection merge component
+
+One real 5,120 × 17,408 down-projection was merged with a synthetic direction and strength 0.01, then re-quantized. Arithmetic took 0.118 seconds excluding input loading. Additional peak MLX allocation was 713,211,908 bytes (680 MiB), below the 1 GiB scratch target. No resulting weights were retained, and no edited full checkpoint was imported. This validates a component's memory behavior, not edited-model quality.
+
 ## What is not yet established
 
 No held-out refusal reduction, coding retention, tool-use retention, edited-model serving speed, or optimal edit strength is claimed. A successful format round trip and small numerical tests do not answer those questions. Use disjoint user-supplied data and the evaluation protocol before selecting or deploying an edited checkpoint.
