@@ -95,6 +95,16 @@ def parser() -> argparse.ArgumentParser:
     merge.add_argument("destination", type=Path)
     merge.add_argument("--edit-spec", required=True, type=Path)
     merge.add_argument("--output", type=Path)
+    for name in ('generate', 'evaluate-nll'):
+        sub = commands.add_parser(name, help='Bounded local generation' if name == 'generate'
+                                  else 'Teacher-forced continuation likelihood')
+        sub.add_argument('export_directory', type=Path)
+        sub.add_argument('--prompt', required=True, type=Path, help='Local UTF-8 prompt file')
+        sub.add_argument('--output', required=True, type=Path, help='New local JSON result path')
+        if name == 'generate':
+            sub.add_argument('--max-new-tokens', type=int, default=128)
+        else:
+            sub.add_argument('--target', required=True, type=Path, help='Local UTF-8 continuation file')
     return result
 
 
@@ -144,6 +154,11 @@ def main(argv: list[str] | None = None) -> int:
             from .workflow import drift_pilot
             report = drift_pilot(args.export_directory, args.dataset, args.directions_directory,
                                  strengths=args.strengths, max_prompts=args.max_prompts)
+        elif args.command in {'generate', 'evaluate-nll'}:
+            from .generation import evaluate_export
+            report = evaluate_export(args.export_directory, args.prompt,
+                                     target_file=getattr(args, 'target', None),
+                                     max_new_tokens=getattr(args, 'max_new_tokens', 128))
         else:
             from .benchmark import compare_reports
             report = compare_reports(json.loads(args.baseline.read_text()),
@@ -152,6 +167,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare" and report.get("status") != "pass":
             return 2
         if args.command == "baseline" and report.get("status") != "complete":
+            return 2
+        if args.command in {'generate', 'evaluate-nll'} and report.get('status') != 'completed':
             return 2
         return 0
     except (ValueError, OSError, RuntimeError, ModuleNotFoundError) as exc:
