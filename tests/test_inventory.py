@@ -57,6 +57,36 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(len(result['blobs']), 3)
         self.assertNotIn(str(self.root), json.dumps(result))
 
+    def test_v2_manifest_preferred_and_digest_checked(self):
+        original = self.manifest([self.tensor()])
+        newer = dict(original, layers=[])
+        descriptor = self.blob(json.dumps(newer).encode(), 'application/vnd.docker.distribution.manifest.v2+json')
+        link = self.root / 'manifests-v2/ollama.com/library/tiny/latest'
+        link.parent.mkdir(parents=True)
+        link.symlink_to(Path('../../../../blobs') / descriptor['digest'].replace(':', '-'))
+        for name in ('tiny', 'ollama.com/library/tiny', 'registry.ollama.ai/library/tiny'):
+            result = inspect_model(name, self.root)
+            self.assertEqual(result['manifest_digest'], descriptor['digest'])
+            self.assertEqual(result['summary']['active_tensor_count'], 0)
+        blob_path(self.root, descriptor['digest']).write_text('{}')
+        with self.assertRaisesRegex(InventoryError, 'hash mismatch'):
+            inspect_model('tiny', self.root)
+
+    def test_dangling_v2_manifest_falls_back_to_legacy(self):
+        self.manifest([self.tensor()])
+        link = self.root / 'manifests-v2/ollama.com/library/tiny/latest'
+        link.parent.mkdir(parents=True)
+        link.symlink_to(Path('../../../../blobs') / ('sha256-' + 'a' * 64))
+        self.assertEqual(inspect_model('tiny', self.root)['summary']['active_tensor_count'], 1)
+
+    def test_manifest_symlink_cannot_target_non_blob(self):
+        self.manifest([self.tensor()])
+        link = self.root / 'manifests-v2/ollama.com/library/tiny/latest'
+        link.parent.mkdir(parents=True)
+        link.symlink_to(self.root / 'manifests/registry.ollama.ai/library/tiny/latest')
+        with self.assertRaisesRegex(InventoryError, 'blob directory'):
+            inspect_model('tiny', self.root)
+
     def test_wrong_blob_size_rejected(self):
         tensor = self.tensor()
         tensor['size'] += 1

@@ -55,10 +55,31 @@ def resolve_model(model: str, models_dir: Path | None = None) -> tuple[Path, Pat
         components = ['registry.ollama.ai', *components]
     elif len(components) != 3:
         raise InventoryError('Expected [registry/][namespace/]model[:tag]')
-    path = _inside(root, root / 'manifests' / Path(*components) / (tag or 'latest'))
-    if not path.is_file():
-        raise InventoryError(f'Model manifest not found for {model}')
-    return root, path
+    host, namespace, name = components
+    public = host.lower() in {'registry.ollama.ai', 'ollama.com'}
+    v2_host = 'ollama.com' if public else host.replace(':', '%3A')
+    candidates = [root / 'manifests-v2' / v2_host / namespace / name / (tag or 'latest'),
+                  root / 'manifests' / host / namespace / name / (tag or 'latest')]
+    if public:
+        alternate = 'ollama.com' if host.lower() == 'registry.ollama.ai' else 'registry.ollama.ai'
+        candidates.append(root / 'manifests' / alternate / namespace / name / (tag or 'latest'))
+    for candidate in candidates:
+        path = _inside(root, candidate)
+        if candidate.is_symlink():
+            # v2 tags point at immutable, content-addressed manifest blobs.
+            # Resolve symlinks only inside the blob directory and verify the
+            # filename digest before accepting their JSON as a manifest.
+            if path.parent != (root / 'blobs').resolve():
+                raise InventoryError('Manifest symlink must target the blob directory')
+            digest = path.name.replace('sha256-', 'sha256:', 1)
+            if not _DIGEST.fullmatch(digest):
+                raise InventoryError('Manifest symlink target is not a sha256 blob')
+            if not path.exists():
+                continue  # Match Ollama's fallback for dangling v2 links.
+            _json_bytes(path, digest)
+        if path.is_file():
+            return root, path
+    raise InventoryError(f'Model manifest not found for {model}')
 
 
 def blob_path(root: Path, digest: str) -> Path:

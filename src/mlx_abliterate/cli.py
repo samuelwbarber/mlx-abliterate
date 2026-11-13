@@ -47,6 +47,14 @@ def parser() -> argparse.ArgumentParser:
         sub.add_argument("--output", type=Path, help="New JSON report path (default: stdout)")
         if name == "export":
             sub.add_argument("destination", type=Path)
+        if name == "inspect":
+            sub.add_argument("--verify-payloads", action="store_true",
+                             help="Stream SHA256 over all model blobs")
+    verify = commands.add_parser("verify-import", help="Check imported payloads against export receipt")
+    verify.add_argument("model")
+    verify.add_argument("export_directory", type=Path)
+    verify.add_argument("--models-dir", type=Path)
+    verify.add_argument("--output", type=Path)
     bench = commands.add_parser("baseline", help="Measure Ollama generation; does not execute generated code")
     bench.add_argument("model")
     bench.add_argument("--prompts", required=True, type=Path)
@@ -59,6 +67,7 @@ def parser() -> argparse.ArgumentParser:
     bench.add_argument("--timeout", type=float, default=120)
     bench.add_argument("--think", action="store_true")
     bench.add_argument("--cold", action="store_true", help="Unload this model before the first request")
+    bench.add_argument("--environment", type=Path, help="JSON with observed power/thermal/MTP settings")
     compare = commands.add_parser("compare", help="Compare matched completed benchmark reports")
     compare.add_argument("baseline", type=Path)
     compare.add_argument("candidate", type=Path)
@@ -73,7 +82,11 @@ def main(argv: list[str] | None = None) -> int:
             raise FileExistsError(f"Report already exists: {args.output}")
         if args.command == "inspect":
             from .inventory import inspect_model
-            report = inspect_model(args.model, models_dir=args.models_dir)
+            report = inspect_model(args.model, models_dir=args.models_dir,
+                                   verify_payloads=args.verify_payloads)
+        elif args.command == "verify-import":
+            from .export import verify_import
+            report = verify_import(args.model, args.export_directory, models_dir=args.models_dir)
         elif args.command in {"plan-export", "export"}:
             from .export import export_model, plan_export
             if args.command == "plan-export":
@@ -88,12 +101,17 @@ def main(argv: list[str] | None = None) -> int:
                 think=args.think, cold=args.cold,
                 options={"temperature": 0, "seed": 42, "num_predict": args.num_predict,
                          "num_ctx": args.num_ctx},
+                environment=json.loads(args.environment.read_text()) if args.environment else None,
             )
         else:
             from .benchmark import compare_reports
             report = compare_reports(json.loads(args.baseline.read_text()),
                                      json.loads(args.candidate.read_text()))
         write_report(report, args.output)
+        if args.command == "compare" and report.get("status") != "pass":
+            return 2
+        if args.command == "baseline" and report.get("status") != "complete":
+            return 2
         return 0
     except (ValueError, OSError, RuntimeError) as exc:
         print(f"mlx-abliterate: {exc}", file=sys.stderr)
