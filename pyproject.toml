@@ -12,6 +12,10 @@ license = {text = "MIT"}
 authors = [{name = "Samuel Barber"}]
 dependencies = []
 
+[project.optional-dependencies]
+mlx = ["mlx==0.32.4; sys_platform == 'darwin' and platform_machine == 'arm64'"]
+runtime = ["mlx==0.32.4; sys_platform == 'darwin' and platform_machine == 'arm64'", "mlx-vlm==0.7.12; sys_platform == 'darwin' and platform_machine == 'arm64'"]
+
 [project.scripts]
 mlx-abliterate = "mlx_abliterate.cli:main"
 
