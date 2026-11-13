@@ -60,7 +60,7 @@ Only consider magnitude-preserving edits or ARA after the simple method's failur
 | Default to sequential GPU trials | Avoid duplicate weights and cache state on a 48 GB machine |
 | Keep license/provenance decision before code reuse | Heretic and its MLX port have different declared licenses; no upstream code is currently included |
 
-Suggested future CLI stages are `inspect`, `baseline`, `collect`, `pilot`, `search`, `evaluate`, and `export`. These names describe intended workflow only; no commands exist yet.
+The CLI now implements `inspect`, `baseline`, `collect`, `pilot`, unchanged `export`, selected-projection `merge`, and integrity/comparison commands. `search` remains a Python callback runner; generation-based evaluation and automatic candidate selection are not implemented. See [usage](USAGE.md) for current commands.
 
 ## Expected artifacts
 
@@ -71,7 +71,7 @@ Suggested future CLI stages are `inspect`, `baseline`, `collect`, `pilot`, `sear
 - A no-op artifact, quantization-only control, and selected edited export.
 - A report that distinguishes research throughput, cold latency, warm decode, cache reuse, capability scores, and refusal behavior.
 
-Large artifacts and prompts remain outside Git. Model tags and output paths are new; stock weights are never overwritten. Publication, if wanted later, is a separate task from creating this local repository.
+Large artifacts and prompts remain outside Git. Model tags and output paths are new; stock weights are never overwritten. Public incremental source commits are authorized; this does not imply publication of model weights or private datasets.
 
 ## Effort and runtime estimates
 
@@ -99,4 +99,4 @@ Format incompatibility or a required new model adapter could expand those ranges
 
 ## Review point
 
-The next implementation task should be **Stage 0 plus the no-op format/serving spike**, not a Heretic fork, full 27B model expansion, or an overnight ablation run. Implementation now follows this sequence; the user subsequently authorized development and public incremental commits.
+Stages 0–2 have initial local evidence, including unchanged-model import fidelity, short serving measurements, and the exact-source MLX pilot. The current next gate is **Stage 3 repeated-trial stability and longer-context bounded execution**. The three-trial mechanical smoke does not establish that gate. Stage 4 still requires disjoint study data and an explicit behavioral/capability evaluator; export components do not establish Stage 5 quality. See [measured results](RESULTS.md) for the limits of the completed checks.

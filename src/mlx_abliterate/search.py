@@ -195,7 +195,7 @@ def run_candidates(run_dir: str | Path, candidates: list[dict], provenance: dict
             error_type = None
             try:
                 reset_state()
-            except Exception as exc:
+            except (Exception, KeyboardInterrupt) as exc:
                 reset_failed = True
                 error_type = type(exc).__name__
             if reset_failed:

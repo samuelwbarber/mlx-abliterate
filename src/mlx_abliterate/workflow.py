@@ -182,6 +182,11 @@ def drift_pilot(export: Path, dataset: Path, directions_directory: Path, *,
                     candidate = adapter.last_logits(prompt)
                     baseline = mx.load(str(Path(folder) / f'{index}.npy'))
                     values.append(first_token_kl(baseline, candidate).item())
+                    # A zero-edit run is a fidelity gate, not just another
+                    # diagnostic. KL alone misses a constant logit offset.
+                    if strength == 0 and not mx.array_equal(
+                            baseline, candidate.astype(mx.float32)).item():
+                        raise ValueError('Zero-strength control changed baseline logits; pilot stopped')
                     guard.check(mx)
             finally:
                 adapter.reset_edits()

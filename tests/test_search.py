@@ -97,6 +97,17 @@ class SearchTests(unittest.TestCase):
                 self.assertEqual(report['eligible_candidates'], 0)
                 self.assertEqual(report['trials'][0]['result']['status'], 'runtime_error')
 
+    def test_interrupt_during_initial_reset_blocks_resume(self):
+        def interrupted_reset():
+            raise KeyboardInterrupt()
+        report = self.run_study(reset_state=interrupted_reset)
+        self.assertEqual(report['status'], 'blocked')
+        self.assertEqual(report['eligible_candidates'], 0)
+        self.assertEqual(self.events, [])
+        self.assertTrue(report['trials'][0]['reset_failed'])
+        with self.assertRaisesRegex(RuntimeError, 'cache-reset'):
+            self.run_study()
+
     def test_concurrent_owner_rejected(self):
         def nested(candidate):
             with self.assertRaisesRegex(RuntimeError, 'another worker'):

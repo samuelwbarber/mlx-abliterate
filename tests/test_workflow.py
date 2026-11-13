@@ -113,6 +113,42 @@ class WorkflowTests(unittest.TestCase):
             self.collect()
         self.assertEqual((self.destination / 'directions.json').read_bytes(), before)
 
+    def test_zero_control_failure_stops_before_nonzero_trials_and_resets(self):
+        self.collect()
+        # Both distributions are identical, so KL cannot detect this broken
+        # zero-edit implementation. The raw logits still must match exactly.
+        with patch.object(self.adapter, 'last_logits', side_effect=[
+                mx.array([[0., 0.]]), mx.array([[1., 1.]])]), \
+                patch.object(self.adapter, 'set_edits', wraps=self.adapter.set_edits) as setter:
+            with self.assertRaisesRegex(ValueError, 'Zero-strength control'):
+                drift_pilot(self.export, self.dataset, self.destination)
+        self.assertEqual(setter.call_count, 1)
+        self.assertEqual(setter.call_args.args[1], 0)
+        self.assertEqual(self.adapter.resets, 1)
+        self.assertEqual(self.adapter.strength, 0)
+
+    def test_inference_failure_restores_edits_and_stops_trials(self):
+        self.collect()
+        with patch.object(self.adapter, 'last_logits', side_effect=[
+                mx.array([[0., 0.]]), mx.array([[0., 0.]]), RuntimeError('inference failed')]), \
+                patch.object(self.adapter, 'set_edits', wraps=self.adapter.set_edits) as setter:
+            with self.assertRaisesRegex(RuntimeError, 'inference failed'):
+                drift_pilot(self.export, self.dataset, self.destination)
+        self.assertEqual(setter.call_count, 2)
+        self.assertEqual(self.adapter.resets, 2)
+        self.assertEqual(self.adapter.strength, 0)
+
+    def test_failed_edit_installation_also_resets(self):
+        self.collect()
+        def fail_install(*args):
+            self.adapter.strength = .5
+            raise RuntimeError('install failed')
+        with patch.object(self.adapter, 'set_edits', side_effect=fail_install):
+            with self.assertRaisesRegex(RuntimeError, 'install failed'):
+                drift_pilot(self.export, self.dataset, self.destination)
+        self.assertEqual(self.adapter.resets, 1)
+        self.assertEqual(self.adapter.strength, 0)
+
     def test_source_data_runtime_and_direction_mismatch_before_model_load(self):
         self.collect()
         metadata_path = self.destination / 'directions.json'

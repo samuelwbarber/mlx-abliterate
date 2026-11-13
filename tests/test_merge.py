@@ -10,7 +10,7 @@ try:
 except ModuleNotFoundError:
     mx = None
 
-from mlx_abliterate.export import ExportError, export_model
+from mlx_abliterate.export import ExportError, export_model, verify_export
 from mlx_abliterate.merge import merge_export, merge_nvfp4, NVFP4_MAX
 
 
@@ -72,6 +72,12 @@ class MergeMathTests(unittest.TestCase):
         with self.assertRaisesRegex(ExportError, 'block-scale'):
             merge_nvfp4(self.packed, mx.full(self.scales.shape, 127, mx.uint8), self.global_factor, self.direction, .5)
 
+    def test_invalid_budgets_cannot_bypass_admission(self):
+        for budget in (float('nan'), float('inf'), True, 0, -1, 1024.5):
+            with self.subTest(budget=budget), self.assertRaisesRegex(ExportError, 'scratch budget'):
+                merge_nvfp4(self.packed, self.scales, self.global_factor, self.direction, .5,
+                            scratch_limit_bytes=budget)
+
 
 class MergeExportTests(unittest.TestCase):
     def setUp(self):
@@ -112,6 +118,7 @@ class MergeExportTests(unittest.TestCase):
 
     def test_zero_merge_copies_exact_payloads_without_mlx(self):
         result = merge_export(self.source, self.dest, self.spec)
+        self.assertEqual(result['source_content_fingerprint'], verify_export(self.source)['content_fingerprint'])
         self.assertEqual(result['edited_projection_count'], 0)
         before = json.loads((self.source / '.mlx-abliterate/export-report.json').read_text())
         after = json.loads((self.dest / '.mlx-abliterate/export-report.json').read_text())
@@ -138,6 +145,33 @@ class MergeExportTests(unittest.TestCase):
             merge_export(self.source, self.dest, self.spec)
         self.assertFalse(self.dest.exists())
         self.assertEqual(list(self.base.glob('.merged-*')), [])
+
+    def test_appended_asset_bytes_are_rejected_before_staging(self):
+        with (self.source / 'config.json').open('ab') as stream:
+            stream.write(b'\n{}')
+        with self.assertRaisesRegex(ExportError, 'asset size'):
+            merge_export(self.source, self.dest, self.spec)
+        self.assertFalse(self.dest.exists())
+        self.assertEqual(list(self.base.glob('.merged-*')), [])
+
+    def test_undeclared_loader_asset_is_rejected(self):
+        (self.source / 'tokenizer_config.json').write_text('{}')
+        with self.assertRaisesRegex(ExportError, 'undeclared'):
+            merge_export(self.source, self.dest, self.spec)
+        self.assertFalse(self.dest.exists())
+
+    def test_runtime_metadata_cannot_escape_export(self):
+        options = self.source / '.mlx-abliterate/create-options.json'
+        outside = self.base / 'options.json'
+        options.rename(outside)
+        options.symlink_to(outside)
+        with self.assertRaisesRegex(ExportError, 'escaping'):
+            merge_export(self.source, self.dest, self.spec)
+        self.assertFalse(self.dest.exists())
+
+    def test_zero_export_rejects_invalid_budget(self):
+        with self.assertRaisesRegex(ExportError, 'scratch budget'):
+            merge_export(self.source, self.dest, self.spec, scratch_limit_bytes=float('nan'))
 
     @unittest.skipIf(mx is None, 'MLX unavailable')
     def test_selected_merge_rewrites_only_requested_bundle(self):

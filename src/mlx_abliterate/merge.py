@@ -15,7 +15,7 @@ import shutil
 import struct
 import tempfile
 
-from .export import ExportError, _copy_range, _dump, _shards, _publish_directory
+from .export import ExportError, _copy_range, _dump, _shards, _publish_directory, verify_export
 from .inventory import read_safetensors_header
 
 GIB = 1024 ** 3
@@ -37,6 +37,11 @@ def _validate_strength(strength):
     return float(strength)
 
 
+def _validate_scratch_budget(value):
+    if type(value) is not int or value <= 0:
+        raise ExportError('Matrix scratch budget must be a positive integer byte count')
+
+
 def merge_nvfp4(weight, scales, global_scale, direction, strength: float, *,
                 scale_policy: str = 'absmax', force_requantize: bool = False,
                 scratch_limit_bytes: int = GIB):
@@ -49,6 +54,7 @@ def merge_nvfp4(weight, scales, global_scale, direction, strength: float, *,
     """
     mx = _mlx()
     from .edits import normalize_direction
+    _validate_scratch_budget(scratch_limit_bytes)
     strength = _validate_strength(strength)
     if scale_policy not in {'preserve', 'absmax'}:
         raise ExportError('Scale policy must be preserve or absmax')
@@ -195,11 +201,16 @@ def merge_export(source_export: Path, destination: Path, edit_spec: dict, *,
     This function does not import, evaluate, or approve the resulting model.
     """
     source = Path(source_export).resolve()
+    _validate_scratch_budget(scratch_limit_bytes)
     destination = Path(destination).absolute()
     if destination.exists() or destination.is_symlink():
         raise FileExistsError(destination)
     if source == destination.resolve() or source in destination.resolve().parents:
         raise ExportError('Destination must be outside source export')
+    # Match inference admission: copying just the declared asset prefix could
+    # otherwise silently accept appended bytes or undeclared loader assets.
+    # Keep the source immutable for the duration of the merge.
+    source_verification = verify_export(source, require_unmodified=True)
     receipt, entries = _source_entries(source)
     edits, policy, force = _validate_spec(edit_spec, receipt, entries)
     by_name = {entry['name']: entry for entry in entries}
@@ -283,6 +294,7 @@ def merge_export(source_export: Path, destination: Path, edit_spec: dict, *,
         shutil.copyfile(source / 'Modelfile', staging / 'Modelfile')
         _dump(receipts / 'edit-spec.json', edit_spec)
         result = {'schema_version': 1, 'edited_projection_count': len(reports), 'projection_reports': reports,
+                  'source_content_fingerprint': source_verification['content_fingerprint'],
                   'source_manifest_digest': receipt['source_manifest_digest'], 'validated_import': False,
                   'quality_validated': False, 'source_receipt_sha256': hashlib.sha256((source / '.mlx-abliterate/export-report.json').read_bytes()).hexdigest()}
         _dump(receipts / 'merge-report.json', result)
