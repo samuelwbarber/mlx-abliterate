@@ -49,6 +49,7 @@ Optional numerical tests run when MLX is installed and otherwise skip. Linux CI 
 - [Research findings](docs/RESEARCH.md): source-code audit, existing approaches, and unresolved questions.
 - [Evaluation protocol](docs/EVALUATION.md): capability retention, refusal measurement, runtime comparisons, and ETA calculation.
 - [Sources](research/SOURCES.md): primary references and pinned source revisions.
+- [Stability probe](docs/STABILITY.md): bounded repeated-prefill validation and remaining memory gates.
 - [Local evidence](research/evidence/): hardware inventory and prior benchmark measurements, without credentials or device identifiers.
 
 ## What success means
