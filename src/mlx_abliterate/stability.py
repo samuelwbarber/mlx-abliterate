@@ -31,7 +31,7 @@ def validate_config(lengths, cycles, tolerance_bytes):
 
 
 def run_trials(adapter, mx, prompts, *, cycles=5, tolerance_bytes=16 * 1024**2,
-               guard=None):
+               guard=None, collect=False):
     """Warm each shape, then compare post-reset live allocation across cycles.
 
     Synthetic nonzero edits exercise all wrappers but are not learned directions.
@@ -39,6 +39,8 @@ def run_trials(adapter, mx, prompts, *, cycles=5, tolerance_bytes=16 * 1024**2,
     recorded separately; caches are not artificially cleared between trials.
     """
     validate_config([len(p) for p in prompts], cycles, tolerance_bytes)
+    if type(collect) is not bool:
+        raise ValueError('collect must be boolean')
     guard = guard or MemoryGuard()
     width = next(iter(adapter.projections.values())).weight.shape[0]
     direction = mx.ones((width,), dtype=mx.float32)
@@ -50,6 +52,30 @@ def run_trials(adapter, mx, prompts, *, cycles=5, tolerance_bytes=16 * 1024**2,
             baseline = adapter.last_logits(prompt)
             if not mx.all(mx.isfinite(baseline)).item():
                 raise ValueError('Nonfinite baseline')
+            collection = None
+            if collect:
+                started = time.monotonic()
+                before = guard.check(mx)
+                vectors = adapter.collect_last_hidden(prompt)
+                layers = adapter.preflight['config']['text_config']['num_hidden_layers']
+                if set(vectors) != set(range(layers + 1)):
+                    raise ValueError('Incomplete residual positions')
+                for vector in vectors.values():
+                    if vector.shape != (width,) or not mx.all(mx.isfinite(vector)).item():
+                        raise ValueError('Invalid residual shape or nonfinite residual')
+                observed = guard.check(mx)
+                collection_seconds = time.monotonic() - started
+                del vector, vectors
+                restored = adapter.last_logits(prompt)
+                difference = mx.max(mx.abs(restored - baseline)).item()
+                if difference != 0.:
+                    raise ValueError('Post-collection fidelity gate failed')
+                del restored
+                gc.collect()
+                collection = {'seconds': collection_seconds, 'residual_count': layers + 1,
+                              'residual_width': width, 'restored_max_logit_delta': difference,
+                              'memory_before': before, 'memory_with_residuals': observed,
+                              'memory_after_release': guard.check(mx)}
             records = []
             # First cycle warms every edit/shape combination; exclude its memory.
             for cycle in range(cycles + 1):
@@ -82,18 +108,19 @@ def run_trials(adapter, mx, prompts, *, cycles=5, tolerance_bytes=16 * 1024**2,
             active = [r['memory']['mlx_active_bytes'] for r in records[1:]]
             spread = max(active) - min(active)
             results.append({'token_count': len(prompt), 'cycles': records,
+                            'collection': collection,
                             'measured_active_spread_bytes': spread,
                             'allocation_plateau_passed': spread <= tolerance_bytes})
             del baseline
     finally:
         adapter.reset_edits()
     return {'status': 'passed' if all(r['allocation_plateau_passed'] for r in results) else 'failed',
-            'lengths': results, 'strengths': [0., .05, .1],
+            'lengths': results, 'strengths': [0., .05, .1], 'collection_enabled': collect,
             'allocation_spread_tolerance_bytes': tolerance_bytes,
-            'scope': 'Synthetic prefill and reversible-edit stability only; no generation, collection, quality, or serving claims.'}
+            'scope': 'Synthetic prefill and reversible-edit stability only; no generation, quality, or serving claims.'}
 
 
-def _worker(export, output, lengths, cycles, tolerance):
+def _worker(export, output, lengths, cycles, tolerance, collect):
     report = {'status': 'failed'}
     try:
         from .export import verify_export
@@ -113,7 +140,7 @@ def _worker(export, output, lengths, cycles, tolerance):
                               cache_limit=guard.cache_limit_bytes)
         load_seconds = time.monotonic() - start
         report = run_trials(adapter, mx, prompts, cycles=cycles,
-                            tolerance_bytes=tolerance, guard=guard)
+                            tolerance_bytes=tolerance, guard=guard, collect=collect)
         report.update(schema_version=1, runtime=runtime_versions(), source_identity=identity,
                       load_seconds=load_seconds, final_memory=guard.check(mx),
                       synthetic_input_sha256=hashlib.sha256(json.dumps(prompts).encode()).hexdigest())
@@ -124,13 +151,15 @@ def _worker(export, output, lengths, cycles, tolerance):
 
 def supervise(export, *, lengths=(32, 256, 1024), cycles=5,
               tolerance_bytes=16 * 1024**2, timeout_seconds=600,
-              process_limit_bytes=34 * GIB):
+              process_limit_bytes=34 * GIB, collect=False):
     """Run one child; terminate only that child on timeout or RSS breach.
 
     Requires ps RSS in KiB (macOS/Linux). External supervision supplements, but
     cannot make allocation OOM-proof, the adapter's phase-boundary checks.
     """
     validate_config(lengths, cycles, tolerance_bytes)
+    if type(collect) is not bool:
+        raise ValueError('collect must be boolean')
     if (isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float))
             or not math.isfinite(timeout_seconds) or timeout_seconds <= 0):
         raise ValueError('Timeout must be finite and positive')
@@ -139,7 +168,7 @@ def supervise(export, *, lengths=(32, 256, 1024), cycles=5,
     with tempfile.TemporaryDirectory(prefix='mlx-stability-') as directory:
         output = str(Path(directory) / 'result.json')
         process = multiprocessing.get_context('spawn').Process(
-            target=_worker, args=(str(export), output, lengths, cycles, tolerance_bytes))
+            target=_worker, args=(str(export), output, lengths, cycles, tolerance_bytes, collect))
         process.start()
         start = time.monotonic()
         sampled_peak = 0
@@ -152,13 +181,24 @@ def supervise(export, *, lengths=(32, 256, 1024), cycles=5,
                 if time.monotonic() - start > timeout_seconds:
                     failure = 'timeout'
                     break
-                usage = subprocess.run(['ps', '-o', 'rss=', '-p', str(process.pid)],
-                                       capture_output=True, text=True, timeout=2)
+                try:
+                    usage = subprocess.run(['ps', '-o', 'rss=', '-p', str(process.pid)],
+                                           capture_output=True, text=True, timeout=2)
+                except (OSError, subprocess.TimeoutExpired):
+                    failure = 'watchdog_unavailable'
+                    break
                 if usage.returncode or not usage.stdout.strip():
                     if process.is_alive():
                         failure = 'watchdog_unavailable'
                     break
-                sampled_peak = max(sampled_peak, int(usage.stdout.strip()) * 1024)
+                try:
+                    rss = int(usage.stdout.strip()) * 1024
+                    if rss < 0:
+                        raise ValueError('Negative RSS')
+                except ValueError:
+                    failure = 'watchdog_unavailable'
+                    break
+                sampled_peak = max(sampled_peak, rss)
                 if sampled_peak > process_limit_bytes:
                     failure = 'memory_guard_abort'
                     break
@@ -188,13 +228,14 @@ def main():
     parser.add_argument('--export', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--lengths', nargs='+', type=int, default=[32, 256, 1024])
+    parser.add_argument('--collect', action='store_true', help='Validate bounded residual collection at each length')
     parser.add_argument('--cycles', type=int, default=5)
     parser.add_argument('--timeout-seconds', type=float, default=600)
     args = parser.parse_args()
     # Reserve before expensive loading; never overwrite a previous report.
     with args.output.open('x') as stream:
         report = supervise(args.export, lengths=args.lengths, cycles=args.cycles,
-                           timeout_seconds=args.timeout_seconds)
+                           timeout_seconds=args.timeout_seconds, collect=args.collect)
         json.dump(report, stream, indent=2, allow_nan=False)
         stream.write('\n')
     return 0 if report['status'] == 'passed' else 1

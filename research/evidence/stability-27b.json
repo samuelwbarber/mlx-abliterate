@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "runtime": {
+    "mlx": "0.32.4",
+    "mlx-vlm": "0.7.12"
+  },
+  "source_identity": {
+    "schema_version": 1,
+    "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+    "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+    "modified": false,
+    "tensor_count": 2017,
+    "asset_count": 8,
+    "payload_bytes_verified": 18154744900,
+    "copy_buffer_bytes": 4194304,
+    "payloads_verified": true
+  },
+  "strengths": [
+    0.0,
+    0.05,
+    0.1
+  ],
+  "collection_enabled": true,
+  "allocation_spread_tolerance_bytes": 16777216,
+  "load_seconds": 1.0135775409999042,
+  "synthetic_input_sha256": "63903118c7ba09cd79ed0980a569586c2d161348c4038feeedf6a75dec49c128",
+  "watchdog": {
+    "sampled_peak_rss_bytes": 18253365248,
+    "process_limit_bytes": 36507222016,
+    "elapsed_seconds": 113.74713708299896,
+    "timeout_seconds": 600,
+    "exitcode": 0
+  },
+  "scope": "Synthetic prefill and reversible-edit stability only; no generation, quality, or serving claims.",
+  "lengths": [
+    {
+      "token_count": 32,
+      "warmup_cycles": 1,
+      "measured_cycles": 5,
+      "measured_cycle_seconds": [
+        0.9251007080001727,
+        0.9269607500009442,
+        0.9293663330008712,
+        0.9288598330003879,
+        0.9305650840015005
+      ],
+      "median_measured_cycle_seconds": 0.9288598330003879,
+      "measured_active_spread_bytes": 0,
+      "allocation_plateau_passed": true,
+      "post_reset_active_bytes": [
+        17917023410
+      ],
+      "max_logit_delta_by_strength": [
+        0.0,
+        2.03125,
+        1.625
+      ],
+      "collection": {
+        "seconds": 0.23468974999923375,
+        "residual_count": 65,
+        "residual_width": 5120,
+        "restored_max_logit_delta": 0.0,
+        "active_bytes_before": 17917023410,
+        "active_bytes_with_residuals": 17919171902,
+        "active_bytes_after_release": 17917023410
+      }
+    },
+    {
+      "token_count": 256,
+      "warmup_cycles": 1,
+      "measured_cycles": 5,
+      "measured_cycle_seconds": [
+        2.8773458750001737,
+        2.878667291999591,
+        2.8862827909997577,
+        2.8767693749996397,
+        2.875157708000188
+      ],
+      "median_measured_cycle_seconds": 2.8773458750001737,
+      "measured_active_spread_bytes": 0,
+      "allocation_plateau_passed": true,
+      "post_reset_active_bytes": [
+        17917024306
+      ],
+      "max_logit_delta_by_strength": [
+        0.0,
+        1.90625,
+        2.171875
+      ],
+      "collection": {
+        "seconds": 0.7058760419986356,
+        "residual_count": 65,
+        "residual_width": 5120,
+        "restored_max_logit_delta": 0.0,
+        "active_bytes_before": 17917024306,
+        "active_bytes_with_residuals": 17919171774,
+        "active_bytes_after_release": 17917024306
+      }
+    },
+    {
+      "token_count": 1024,
+      "warmup_cycles": 1,
+      "measured_cycles": 5,
+      "measured_cycle_seconds": [
+        11.442232917001093,
+        11.781288750000385,
+        11.759541416000502,
+        11.581302166001478,
+        11.775437083000725
+      ],
+      "median_measured_cycle_seconds": 11.759541416000502,
+      "measured_active_spread_bytes": 0,
+      "allocation_plateau_passed": true,
+      "post_reset_active_bytes": [
+        17917043762
+      ],
+      "max_logit_delta_by_strength": [
+        0.0,
+        2.765625,
+        5.3125
+      ],
+      "collection": {
+        "seconds": 2.931558459000371,
+        "residual_count": 65,
+        "residual_width": 5120,
+        "restored_max_logit_delta": 0.0,
+        "active_bytes_before": 17917044786,
+        "active_bytes_with_residuals": 17919173682,
+        "active_bytes_after_release": 17917043762
+      }
+    }
+  ],
+  "final_memory": {
+    "process_peak_rss_bytes": 18256232448,
+    "mlx_active_bytes": 17916486706,
+    "mlx_cache_bytes": 1064239378,
+    "mlx_peak_bytes": 20337631316
+  },
+  "system_telemetry": {
+    "sample_count": 114,
+    "sampled_duration_seconds": 114.27889662500093,
+    "pressure_level_counts": {
+      "1": 114
+    },
+    "vm_stat_page_size_bytes": 16384,
+    "exitcode": 0,
+    "swapins": {
+      "start_pages": 117962,
+      "end_pages": 119585,
+      "delta_pages": 1623,
+      "delta_bytes": 26591232
+    },
+    "swapouts": {
+      "start_pages": 274960,
+      "end_pages": 274960,
+      "delta_pages": 0,
+      "delta_bytes": 0
+    },
+    "scope": "System-wide sampled counters, not attributable solely to this process; pressure level 1 throughout. Nonzero pre-existing swap usage does not measure new swapouts."
+  },
+  "limitations": [
+    "Synthetic prompts and synthetic all-projection directions; no learned behavioral direction or quality claim.",
+    "Each cycle includes three edited prefills and one restored baseline prefill; times are not single-prompt latency or serving throughput.",
+    "One full tiny unit suite ran concurrently early; timing is not an isolated benchmark.",
+    "RSS and MLX counters overlap and must not be summed.",
+    "Sampled pressure and swap counters do not rule out transient events between samples."
+  ]
+}

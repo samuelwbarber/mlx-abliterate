@@ -2,6 +2,8 @@ import unittest
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch, MagicMock
+import subprocess
 
 from mlx_abliterate.stability import run_trials, validate_config, supervise
 
@@ -20,6 +22,22 @@ class ConfigTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             supervise('unused', timeout_seconds=float('nan'))
 
+    def test_watchdog_failures_return_reports(self):
+        for failure in (OSError('unavailable'), subprocess.TimeoutExpired('ps', 2),
+                        SimpleNamespace(returncode=0, stdout='invalid')):
+            process = MagicMock(pid=123, exitcode=-15)
+            process.is_alive.return_value = True
+            context = MagicMock()
+            context.Process.return_value = process
+            kwargs = ({'side_effect': failure} if isinstance(failure, Exception)
+                      else {'return_value': failure})
+            with patch('mlx_abliterate.stability.multiprocessing.get_context', return_value=context), \
+                    patch('mlx_abliterate.stability.subprocess.run', **kwargs):
+                report = supervise('unused', lengths=[1], cycles=3)
+            self.assertEqual(report['status'], 'failed')
+            self.assertEqual(report['error_type'], 'watchdog_unavailable')
+            process.terminate.assert_called_once()
+
     def test_worker_failure_returns_failed_report(self):
         with tempfile.TemporaryDirectory() as folder:
             report = supervise(Path(folder) / 'missing', lengths=[1], cycles=3, timeout_seconds=20)
@@ -32,12 +50,16 @@ class ConfigTests(unittest.TestCase):
 class StabilityTests(unittest.TestCase):
     class Adapter:
         def __init__(self, *, broken_zero=False, broken_restore=False, crash=False):
+            self.preflight = {'config': {'text_config': {'num_hidden_layers': 2}}}
             self.projections = {'tiny': SimpleNamespace(weight=mx.ones((4, 4)))}
             self.strength = None
             self.broken_zero = broken_zero
             self.broken_restore = broken_restore
             self.crash = crash
             self.edited = False
+
+        def collect_last_hidden(self, tokens):
+            return {i: mx.ones((4,)) for i in range(3)}
 
         def set_edits(self, directions, strength):
             self.strength = strength
@@ -69,6 +91,35 @@ class StabilityTests(unittest.TestCase):
         self.assertEqual(result['status'], 'passed')
         self.assertEqual(len(result['lengths'][0]['cycles']), 4)
         self.assertTrue(result['lengths'][0]['cycles'][0]['warmup'])
+
+    def test_collection_phase(self):
+        result = run_trials(self.Adapter(), mx, [[1]], cycles=3,
+                            guard=self.Guard(), collect=True)
+        phase = result['lengths'][0]['collection']
+        self.assertEqual(phase['residual_count'], 3)
+        self.assertEqual(phase['restored_max_logit_delta'], 0.)
+        self.assertIn('memory_after_release', phase)
+
+    def test_collection_rejects_invalid_residuals(self):
+        for values in ({0: mx.ones((4,))},
+                       {i: mx.ones((3,)) for i in range(3)},
+                       {i: mx.array([float('nan')] * 4) for i in range(3)}):
+            adapter = self.Adapter()
+            adapter.collect_last_hidden = lambda tokens: values
+            with self.assertRaises(ValueError):
+                run_trials(adapter, mx, [[1]], cycles=3, guard=self.Guard(), collect=True)
+            self.assertIsNone(adapter.strength)
+
+    def test_post_collection_fidelity(self):
+        adapter = self.Adapter(broken_restore=True)
+        original = adapter.collect_last_hidden
+        def corrupt(tokens):
+            adapter.edited = True
+            return original(tokens)
+        adapter.collect_last_hidden = corrupt
+        with self.assertRaisesRegex(ValueError, 'Post-collection'):
+            run_trials(adapter, mx, [[1]], cycles=3, guard=self.Guard(), collect=True)
+        self.assertIsNone(adapter.strength)
 
     def test_leak_rejected(self):
         result = run_trials(self.Adapter(), mx, [[1]], cycles=3,

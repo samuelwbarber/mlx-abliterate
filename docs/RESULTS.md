@@ -39,6 +39,14 @@ MLX peak allocation was 18,257,958,244 bytes (17.00 GiB). Active allocations sta
 
 One real 5,120 × 17,408 down-projection was merged with a synthetic direction and strength 0.01, then re-quantized. Arithmetic took 0.118 seconds excluding input loading. Additional peak MLX allocation was 713,211,908 bytes (680 MiB), below the 1 GiB scratch target. No resulting weights were retained, and no edited full checkpoint was imported. This validates a component's memory behavior, not edited-model quality.
 
+## Repeated prefill and collection stability
+
+With RANA stopped and Ollama empty, the 27B model passed synthetic 32-, 256-, and 1,024-token validation. Each length had one warm-up and five measured cycles, with strengths 0, 0.05 and 0.1 followed by restoration. Zero-edit and restored logits matched exactly. All 65 collected residual vectors were finite and had width 5,120; collection left baseline logits unchanged.
+
+Post-reset live MLX allocations had **zero measured spread** across the five cycles at each length. Peak MLX allocation was 20,337,631,316 bytes (18.94 GiB), and process peak RSS was 18,256,232,448 bytes (17.00 GiB); these overlap. All 114 system pressure samples reported level 1, with no additional swapouts. Existing swap usage and some swapins were present; these system counters cannot be attributed solely to this process.
+
+The supervised run took 113.75 seconds. A small unit suite ran concurrently early, so timings are not an isolated performance benchmark. Synthetic directions and repeated prefill do not establish behavioral effectiveness, generation stability, or capability retention. See [sanitized evidence](../research/evidence/stability-27b.json) and [probe usage](STABILITY.md).
+
 ## What is not yet established
 
 No held-out refusal reduction, coding retention, tool-use retention, edited-model serving speed, or optimal edit strength is claimed. A successful format round trip and small numerical tests do not answer those questions. Use disjoint user-supplied data and the evaluation protocol before selecting or deploying an edited checkpoint.
