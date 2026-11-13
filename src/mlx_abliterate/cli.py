@@ -1,0 +1,104 @@
+"""Command-line entry points. Model-changing commands are explicit."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import sys
+import tempfile
+
+from . import __version__
+
+
+def write_report(report: dict, output: Path | None) -> None:
+    """Atomically create a report, refusing to overwrite a prior experiment."""
+    payload = json.dumps(report, indent=2, allow_nan=False) + "\n"
+    if output is None:
+        print(payload, end="")
+        return
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output.parent,
+                                         prefix=".report-", delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        # link is atomic and, unlike replace, refuses an existing destination.
+        os.link(temporary, output)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def parser() -> argparse.ArgumentParser:
+    result = argparse.ArgumentParser(description="MLX model fidelity and ablation research tools")
+    result.add_argument("--version", action="version", version=__version__)
+    commands = result.add_subparsers(dest="command", required=True)
+    for name, description in (("inspect", "Read model metadata without loading weights"),
+                              ("plan-export", "Plan an unchanged export without writing weights"),
+                              ("export", "Write an unchanged interchange artifact to a new directory")):
+        sub = commands.add_parser(name, help=description)
+        sub.add_argument("model")
+        sub.add_argument("--models-dir", type=Path)
+        sub.add_argument("--output", type=Path, help="New JSON report path (default: stdout)")
+        if name == "export":
+            sub.add_argument("destination", type=Path)
+    bench = commands.add_parser("baseline", help="Measure Ollama generation; does not execute generated code")
+    bench.add_argument("model")
+    bench.add_argument("--prompts", required=True, type=Path)
+    bench.add_argument("--output", required=True, type=Path)
+    bench.add_argument("--base-url", default="http://127.0.0.1:11434")
+    bench.add_argument("--repeats", type=int, default=5)
+    bench.add_argument("--warmups", type=int, default=1)
+    bench.add_argument("--num-predict", type=int, default=512)
+    bench.add_argument("--num-ctx", type=int, default=4096)
+    bench.add_argument("--timeout", type=float, default=120)
+    bench.add_argument("--think", action="store_true")
+    bench.add_argument("--cold", action="store_true", help="Unload this model before the first request")
+    compare = commands.add_parser("compare", help="Compare matched completed benchmark reports")
+    compare.add_argument("baseline", type=Path)
+    compare.add_argument("candidate", type=Path)
+    compare.add_argument("--output", type=Path)
+    return result
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
+    try:
+        if args.output is not None and args.output.exists():
+            raise FileExistsError(f"Report already exists: {args.output}")
+        if args.command == "inspect":
+            from .inventory import inspect_model
+            report = inspect_model(args.model, models_dir=args.models_dir)
+        elif args.command in {"plan-export", "export"}:
+            from .export import export_model, plan_export
+            if args.command == "plan-export":
+                report = plan_export(args.model, models_dir=args.models_dir)
+            else:
+                report = export_model(args.model, args.destination, models_dir=args.models_dir)
+        elif args.command == "baseline":
+            from .benchmark import load_prompts, run_benchmark
+            report = run_benchmark(
+                args.model, load_prompts(args.prompts), base_url=args.base_url,
+                repeats=args.repeats, warmups=args.warmups, timeout=args.timeout,
+                think=args.think, cold=args.cold,
+                options={"temperature": 0, "seed": 42, "num_predict": args.num_predict,
+                         "num_ctx": args.num_ctx},
+            )
+        else:
+            from .benchmark import compare_reports
+            report = compare_reports(json.loads(args.baseline.read_text()),
+                                     json.loads(args.candidate.read_text()))
+        write_report(report, args.output)
+        return 0
+    except (ValueError, OSError, RuntimeError) as exc:
+        print(f"mlx-abliterate: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -20,3 +20,6 @@ checkpoints/
 *.npy
 *.sqlite*
 *.log
+*.egg-info/
+build/
+dist/
