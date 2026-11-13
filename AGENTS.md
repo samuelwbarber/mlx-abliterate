@@ -2,7 +2,7 @@
 
 ## Current phase
 
-The user requested careful research and a build plan before implementation. Keep this phase to documentation, source inspection, and recording existing measurements. Do not start an ablation run, download a full checkpoint, implement the engine, or publish the repository as part of this planning task.
+The user has approved implementation with coordinated subagents and a public GitHub repository with incremental commits and pushes. Follow the staged plan: build and validate inventory and the unchanged-model round trip first. Do not bypass failed fidelity gates or modify the stock model. Agents own separate files; the lead integrates, commits, and publishes.
 
 ## Project priorities
 

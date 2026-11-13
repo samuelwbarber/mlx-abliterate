@@ -2,7 +2,7 @@
 
 Research and build plan for modifying a quantized 27B language model on a 48 GB Apple Silicon Mac, while preserving its usefulness for coding and its fast Ollama deployment.
 
-**Status: planning only.** There is no implementation, installable package, or completed ablation experiment in this repository. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
+**Status: early implementation.** Inventory, format fidelity, and benchmark tooling are under development. There is no completed ablation experiment or validated edited 27B model yet. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
 
 The first target is the user's existing `qwen3.8:27b-mlx`: Qwen3.8-27B in Ollama's NVFP4 format, on an M5 Pro with 20 GPU cores. A prior same-prompt comparison measured 65.17 generated tokens/s on its warmed Ollama run, versus 12.35 tokens/s for a different RANA 6-bit checkpoint in `mlx-vlm`. Those results motivate preserving the existing serving path; they do not isolate the cause of the difference or establish relative quality.
 
@@ -29,6 +29,6 @@ This is a systems and evaluation project. It is not a claim that abliteration im
 
 ## Repository and licensing
 
-This repository currently contains original planning documents and small measurement records. No upstream code is vendored. Heretic is AGPL-3.0-or-later; the inspected MLX port has an Apache-2.0 license file. Record provenance and choose the project license before incorporating any implementation. Do not infer permission to relicense upstream code from a fork's README. See the source register.
+Original implementation and documentation are licensed under MIT. No upstream implementation is vendored. Heretic is AGPL-3.0-or-later; the inspected MLX port has an Apache-2.0 license file. Their licenses do not change with this project's license. Record provenance before incorporating upstream code; see the source register.
 
-The repository is local; no remote or public release has been created.
+Development follows the staged plan, with public incremental commits. Model weights, local run artifacts, and private datasets are excluded.
