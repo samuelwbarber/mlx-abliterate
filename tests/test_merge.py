@@ -11,7 +11,22 @@ except ModuleNotFoundError:
     mx = None
 
 from mlx_abliterate.export import ExportError, export_model, verify_export
-from mlx_abliterate.merge import merge_export, merge_nvfp4, NVFP4_MAX
+from mlx_abliterate.merge import merge_export, merge_nvfp4, NVFP4_MAX, MAX_EDIT_SPEC_BYTES, read_edit_spec
+
+
+class EditSpecAdmissionTests(unittest.TestCase):
+    def test_full_architecture_size_allowed_but_limit_enforced(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'spec.json'
+            raw = b'{}' + b' ' * (MAX_EDIT_SPEC_BYTES - 2)
+            path.write_bytes(raw)
+            spec, digest = read_edit_spec(path)
+            self.assertEqual(spec, {})
+            self.assertEqual(digest, hashlib.sha256(raw).hexdigest())
+            with path.open('ab') as stream:
+                stream.write(b' ')
+            with self.assertRaisesRegex(ValueError, '16 MiB'):
+                read_edit_spec(path)
 
 
 @unittest.skipIf(mx is None, 'MLX unavailable')

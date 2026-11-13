@@ -140,11 +140,10 @@ def main(argv: list[str] | None = None) -> int:
                 environment=json.loads(args.environment.read_text()) if args.environment else None,
             )
         elif args.command == "merge":
-            from .merge import merge_export
-            if args.edit_spec.stat().st_size > 8 * 1024 * 1024:
-                raise ValueError('Edit specification exceeds 8 MiB')
+            from .merge import merge_export, read_edit_spec
+            spec, _ = read_edit_spec(args.edit_spec)
             report = merge_export(args.export_directory, args.destination,
-                                  json.loads(args.edit_spec.read_text()))
+                                  spec)
         elif args.command == "collect":
             from .workflow import collect_directions
             report = collect_directions(args.export_directory, args.dataset, args.destination,

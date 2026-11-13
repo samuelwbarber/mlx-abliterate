@@ -126,7 +126,8 @@ def main():
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(args.output)
-    spec = json.loads(args.edit_spec.read_text())
+    from .merge import read_edit_spec
+    spec, _ = read_edit_spec(args.edit_spec)
     if args.mode == 'components':
         report = validate_components(args.source, spec)
     else:

@@ -20,7 +20,17 @@ from .inventory import read_safetensors_header
 
 GIB = 1024 ** 3
 NVFP4_MAX = 2688.0
+MAX_EDIT_SPEC_BYTES = 16 * 1024**2
 _ELIGIBLE = re.compile(r'model\.language_model\.layers\.(\d+)\.(mlp\.down_proj|self_attn\.o_proj|linear_attn\.out_proj)\Z')
+
+
+def read_edit_spec(path):
+    """Bounded JSON admission sized for all 128 width-5120 projections."""
+    with Path(path).open('rb') as stream:
+        raw = stream.read(MAX_EDIT_SPEC_BYTES + 1)
+    if len(raw) > MAX_EDIT_SPEC_BYTES:
+        raise ValueError('Edit specification exceeds 16 MiB')
+    return json.loads(raw), hashlib.sha256(raw).hexdigest()
 
 
 def _mlx():
