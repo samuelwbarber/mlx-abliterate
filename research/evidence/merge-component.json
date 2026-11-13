@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "kind": "single_matrix_memory_component",
+  "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+  "projection": "model.language_model.layers.0.mlp.down_proj",
+  "logical_shape": [
+    5120,
+    17408
+  ],
+  "synthetic_direction": true,
+  "strength": 0.01,
+  "elapsed_seconds": 0.1178826659997867,
+  "mlx_baseline_active_bytes": 50135044,
+  "mlx_peak_active_bytes": 763346952,
+  "mlx_peak_delta_bytes": 713211908,
+  "process_peak_rss_bytes": 107954176,
+  "memory_report": {
+    "changed": true,
+    "requantized": true,
+    "quantization_only": false,
+    "strength": 0.01,
+    "scale_policy": "absmax",
+    "old_global_factor": 0.00036475772503763437,
+    "new_global_factor": 0.00036475667729973793,
+    "estimated_scratch_bytes": 846856192,
+    "edited_max_abs": 0.9804659485816956,
+    "scale_range_exceeded": false,
+    "quality_validated": false
+  },
+  "capability_or_refusal_evaluation": false,
+  "weights_retained": false
+}
