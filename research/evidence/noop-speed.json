@@ -1,0 +1,9 @@
+{
+  "status": "pass",
+  "reasons": [],
+  "minimum_ratio": 0.9,
+  "decode_ratio": 1.045390470941886,
+  "baseline_median": 67.68307400297743,
+  "candidate_median": 70.7552406067671,
+  "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval."
+}

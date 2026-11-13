@@ -1,0 +1,9 @@
+{
+  "model": "mlx-abliterate-noop:27b",
+  "tensor_count": 2017,
+  "payloads_verified": true,
+  "assets_verified": true,
+  "runtime_metadata_verified": true,
+  "serving_speed_verified": false,
+  "model_behavior_verified": false
+}

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "versions": {
+    "mlx": "0.32.4",
+    "mlx-vlm": "0.7.12"
+  },
+  "load_seconds": 2.520846542000072,
+  "projections": 128,
+  "active_memory_after_load": 17916482604,
+  "prefill_seconds": 0.9597825830005604,
+  "zero_edit_max_abs_error": 0.0,
+  "residual_count": 65,
+  "residual_shapes": [
+    "(5120,)"
+  ],
+  "post_collection_max_abs_error": 0.0,
+  "token_count": 9,
+  "logits_shape": [
+    1,
+    248320
+  ],
+  "repeated_prompt_max_abs_error": 0.0,
+  "finite": true,
+  "process_peak_bytes": 14004322304,
+  "mlx_peak_bytes": 18180346622,
+  "mlx_active_bytes": 17925772510
+}
