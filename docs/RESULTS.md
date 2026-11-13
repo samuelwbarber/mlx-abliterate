@@ -47,6 +47,10 @@ Post-reset live MLX allocations had **zero measured spread** across the five cyc
 
 The supervised run took 113.75 seconds. A small unit suite ran concurrently early, so timings are not an isolated performance benchmark. Synthetic directions and repeated prefill do not establish behavioral effectiveness, generation stability, or capability retention. See [sanitized evidence](../research/evidence/stability-27b.json) and [probe usage](STABILITY.md).
 
+A separate run at the adapter's **4,096-token limit** also passed with collection, one warm-up and three measured cycles. Its live allocation spread was zero, MLX peak was 24,299,738,174 bytes (22.63 GiB), and process peak RSS was 16,729,702,400 bytes (15.58 GiB). Collection took 12.38 seconds; each measured cycle (three edited prefills and one restored prefill) took about 48–49 seconds. Total supervised time was 239.92 seconds. Pressure stayed at level 1 and swapouts did not increase. See [4,096-token evidence](../research/evidence/stability-4096.json).
+
+These runs support proceeding from the bounded synthetic prefill/collection gate to a small study. They do not establish long-generation stability or make the first-token drift score a behavioral/capability evaluator.
+
 ## What is not yet established
 
 No held-out refusal reduction, coding retention, tool-use retention, edited-model serving speed, or optimal edit strength is claimed. A successful format round trip and small numerical tests do not answer those questions. Use disjoint user-supplied data and the evaluation protocol before selecting or deploying an edited checkpoint.

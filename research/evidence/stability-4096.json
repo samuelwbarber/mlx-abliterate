@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "runtime": {
+    "mlx": "0.32.4",
+    "mlx-vlm": "0.7.12"
+  },
+  "source_identity": {
+    "schema_version": 1,
+    "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+    "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+    "modified": false,
+    "tensor_count": 2017,
+    "asset_count": 8,
+    "payload_bytes_verified": 18154744900,
+    "copy_buffer_bytes": 4194304,
+    "payloads_verified": true
+  },
+  "strengths": [
+    0.0,
+    0.05,
+    0.1
+  ],
+  "collection_enabled": true,
+  "allocation_spread_tolerance_bytes": 16777216,
+  "load_seconds": 1.203698125000301,
+  "synthetic_input_sha256": "d7a7513299707a53a847433908e42efe2709284a17edd15880d9c1688491dd75",
+  "watchdog": {
+    "sampled_peak_rss_bytes": 16184852480,
+    "process_limit_bytes": 36507222016,
+    "elapsed_seconds": 239.92408474999866,
+    "timeout_seconds": 600,
+    "exitcode": 0
+  },
+  "scope": "Synthetic prefill and reversible-edit stability only; no generation, quality, or serving claims.",
+  "lengths": [
+    {
+      "token_count": 4096,
+      "warmup_cycles": 1,
+      "measured_cycles": 3,
+      "measured_cycle_seconds": [
+        48.318794374999925,
+        48.34006891699937,
+        49.222118916999534
+      ],
+      "median_measured_cycle_seconds": 48.34006891699937,
+      "measured_active_spread_bytes": 0,
+      "allocation_plateau_passed": true,
+      "post_reset_active_bytes": [
+        17917039666
+      ],
+      "max_logit_delta_by_strength": [
+        0.0,
+        1.03125,
+        1.0546875
+      ],
+      "collection": {
+        "seconds": 12.383081083000434,
+        "residual_count": 65,
+        "residual_width": 5120,
+        "restored_max_logit_delta": 0.0,
+        "active_bytes_before": 17917039666,
+        "active_bytes_with_residuals": 17919169586,
+        "active_bytes_after_release": 17917039666
+      }
+    }
+  ],
+  "final_memory": {
+    "process_peak_rss_bytes": 16729702400,
+    "mlx_active_bytes": 17916498994,
+    "mlx_cache_bytes": 924303620,
+    "mlx_peak_bytes": 24299738174
+  },
+  "system_telemetry": {
+    "sample_count": 238,
+    "sampled_duration_seconds": 239.9737707080003,
+    "pressure_level_counts": {
+      "1": 238
+    },
+    "vm_stat_page_size_bytes": 16384,
+    "exitcode": 0,
+    "swapins": {
+      "start_pages": 119712,
+      "end_pages": 120746,
+      "delta_pages": 1034,
+      "delta_bytes": 16941056
+    },
+    "swapouts": {
+      "start_pages": 274960,
+      "end_pages": 274960,
+      "delta_pages": 0,
+      "delta_bytes": 0
+    },
+    "scope": "System-wide sampled counters, not attributable solely to this process; pressure level 1 throughout. Nonzero pre-existing swap usage does not measure new swapouts."
+  },
+  "limitations": [
+    "Synthetic prompts and synthetic all-projection directions; no learned behavioral direction or quality claim.",
+    "Each cycle includes three edited prefills and one restored baseline prefill; times are not single-prompt latency or serving throughput.",
+    "RSS and MLX counters overlap and must not be summed.",
+    "Sampled pressure and swap counters do not rule out transient events between samples."
+  ]
+}
