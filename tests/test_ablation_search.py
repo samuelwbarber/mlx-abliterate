@@ -9,6 +9,47 @@ def windows(refusals):
 
 
 class AblationSearchTests(unittest.TestCase):
+    def test_standard_only_requires_explicit_bounded_schedule(self):
+        from mlx_abliterate.ablation_search import validate_search_mode
+        for candidates in (None, [], default_candidates()[:1], default_candidates()[:6]):
+            with self.assertRaisesRegex(ValueError, 'explicit zero'):
+                validate_search_mode(candidates, True)
+        for value in (1, 'yes', None):
+            with self.assertRaisesRegex(ValueError, 'boolean'):
+                validate_search_mode(default_candidates()[:2], value)
+        self.assertEqual(validate_search_mode(None, False), default_candidates())
+        schedule=default_candidates()[:2]
+        schedule[0]['strength']=.1
+        with self.assertRaises(ValueError):
+            validate_search_mode(schedule,True)
+
+    def test_focused_schedule_marks_skips_and_preserves_all_candidates(self):
+        from mlx_abliterate.ablation_search import focused_standard_schedule
+        schedule=default_candidates()[:5]
+        screen,expanded,selected=focused_standard_schedule(schedule)
+        self.assertEqual(selected,schedule)
+        self.assertEqual(selected[0]['id'],'zero')
+        for stage,report in [('screen',screen),('expanded',expanded)]:
+            self.assertEqual(report['stage'],stage)
+            self.assertEqual(report['status'],'skipped')
+            self.assertEqual(report['reason'],'focused standard optimization; not heldout')
+            self.assertEqual(report['trials'],[])
+            self.assertEqual(report['eligible_candidates'],0)
+            self.assertIsNone(report['best_candidate_id'])
+
+    def test_standard_only_dispatch_does_not_trim_explicit_candidates(self):
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        from mlx_abliterate.ablation_search import run_search
+        schedule=default_candidates()[:5]
+        with tempfile.TemporaryDirectory() as folder:
+            with patch('mlx_abliterate.ablation_search._run_search',return_value={'status':'fixture'}) as run:
+                result=run_search('export','data','directions','cap','rub',folder,
+                                  candidates=schedule,shortlist_size=1,standard_only=True)
+        self.assertEqual(result,{'status':'fixture'})
+        self.assertEqual(run.call_args.args[-3:],(schedule,1,True))
+
     def test_progress_is_stderr_only(self):
         import contextlib,io
         from mlx_abliterate.ablation_search import _progress

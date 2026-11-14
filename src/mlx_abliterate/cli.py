@@ -129,6 +129,8 @@ def parser() -> argparse.ArgumentParser:
         standard_search.add_argument(name, type=Path, help=help_text)
     standard_search.add_argument('--candidates', type=Path, help='Optional fixed candidate list JSON')
     standard_search.add_argument('--shortlist-size', type=int, default=3)
+    standard_search.add_argument('--standard-only', action='store_true',
+        help='Skip candidate development stages for zero plus 1–4 explicit candidates; retain all standard/zero/capability/KL gates')
     standard_search.add_argument('--output', type=Path, help='New JSON report path (default: stdout)')
     for name in ('generate', 'evaluate-nll'):
         sub = commands.add_parser(name, help='Bounded local generation' if name == 'generate'
@@ -190,7 +192,8 @@ def main(argv: list[str] | None = None) -> int:
             candidates = _json_file(args.candidates)[0] if args.candidates else None
             report = run_search(args.export, args.benchmark_dir, args.directions_dir,
                                 args.capability_dataset, args.capability_rubrics, args.run_dir,
-                                candidates=candidates, shortlist_size=args.shortlist_size)
+                                candidates=candidates, shortlist_size=args.shortlist_size,
+                                standard_only=args.standard_only)
         elif args.command == "merge":
             from .merge import merge_export, read_edit_spec
             spec, _ = read_edit_spec(args.edit_spec)

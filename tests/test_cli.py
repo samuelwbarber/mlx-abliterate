@@ -36,12 +36,19 @@ class ReportTests(unittest.TestCase):
         args = parser().parse_args(search_args)
         self.assertEqual(args.shortlist_size, 2)
         self.assertIsNone(args.candidates)
+        self.assertFalse(args.standard_only)
         with patch('mlx_abliterate.ablation_search.run_search', return_value={'export_gate_passed': False}) as search, \
                 patch('mlx_abliterate.cli.write_report'):
             self.assertEqual(main(search_args), 2)
         search.assert_called_once_with(Path('export'), Path('benchmark'), Path('directions'),
                                        Path('capability.jsonl'), Path('rubrics.json'), Path('runs/search'),
-                                       candidates=None, shortlist_size=2)
+                                       candidates=None, shortlist_size=2, standard_only=False)
+        with patch('mlx_abliterate.ablation_search.run_search', return_value={'export_gate_passed': True}) as search, \
+                patch('mlx_abliterate.ablation_search._json_file', return_value=([{'id':'fixture'}], 'hash')), \
+                patch('mlx_abliterate.cli.write_report'):
+            self.assertEqual(main(search_args + ['--standard-only','--candidates','custom.json']), 0)
+        self.assertTrue(search.call_args.kwargs['standard_only'])
+        self.assertEqual(search.call_args.kwargs['candidates'], [{'id':'fixture'}])
 
     def test_heretic_benchmark_parse_and_dispatch(self):
         with tempfile.TemporaryDirectory() as folder:
