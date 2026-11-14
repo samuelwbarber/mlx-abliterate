@@ -66,7 +66,7 @@ Normalized duplicate prompts are rejected both within and across splits. Normali
 Install the optional runtime into the project environment:
 
 ```sh
-.venv/bin/python -m pip install -e '.[runtime]'
+.venv/bin/python -m pip install -c constraints-macos-py311.txt -e '.[runtime,data]'
 .venv/bin/mlx-abliterate collect outputs/unchanged datasets/study.jsonl outputs/directions \
   --positive-group positive --negative-group negative --output runs/collection.json
 .venv/bin/mlx-abliterate pilot outputs/unchanged datasets/study.jsonl outputs/directions \

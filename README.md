@@ -25,14 +25,14 @@ The first implementation gate is an **unchanged-model round trip**. All 2,017 te
 Python 3.11 or newer. Read-only inventory, no-op export, and Ollama benchmarks use the standard library; Apple Silicon MLX is optional.
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 mlx-abliterate inspect qwen3.8:27b-mlx --verify-payloads --output runs/inventory.json
 mlx-abliterate plan-export qwen3.8:27b-mlx
 ```
 
-For model collection, edits, and merging on Apple Silicon, install `pip install -e '.[runtime]'`. Keep only one large model resident. Outputs and run records are excluded from Git.
+For the tested Apple Silicon Python 3.11 runtime and standard-data tools, install `pip install -c constraints-macos-py311.txt -e '.[runtime,data]'`. Keep only one large model resident. Outputs and run records are excluded from Git.
 
 ```bash
 mlx-abliterate export qwen3.8:27b-mlx outputs/stock-noop
