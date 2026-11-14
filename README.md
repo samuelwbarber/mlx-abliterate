@@ -4,6 +4,8 @@ Research and build plan for modifying a quantized 27B language model on a 48 GB 
 
 **Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, bounded generation, a gated small-study runner, resumable trials, and selected-projection merging are implemented. An experimental edited 27B checkpoint has been exported and imported locally as `qwen3.8-abliterated:27b-mlx`. It passed the small diagnostic answer-retention and short serving gates, but its subsequent Heretic standard refusal score was 98/100, unchanged from stock. A full-standard-data search is underway; this first candidate has not achieved the refusal-reduction goal. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
 
+The completed full-data direction search reduced the dynamic standard score to **6/100**, with all eight search capability checks passed, versus 98/100 stock. This misses the predeclared ≤5/100 gate, so that candidate was not exported or installed. A focused strength refinement is next. [Search evidence](research/evidence/heretic-search-v2.json).
+
 The first target is the user's existing `qwen3.8:27b-mlx`: Qwen3.8-27B in Ollama's NVFP4 format, on an M5 Pro with 20 GPU cores. A prior same-prompt comparison measured 65.17 generated tokens/s on its warmed Ollama run, versus 12.35 tokens/s for a different RANA 6-bit checkpoint in `mlx-vlm`. Those results motivate preserving the existing serving path; they do not isolate the cause of the difference or establish relative quality.
 
 ## Local experimental model
