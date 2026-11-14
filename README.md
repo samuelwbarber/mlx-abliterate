@@ -1,20 +1,31 @@
 # MLX Abliterate
 
-Research and build plan for modifying a quantized 27B language model on a 48 GB Apple Silicon Mac, while preserving its usefulness for coding and its fast Ollama deployment.
+Memory-bounded MLX abliteration and a native Metal serving extension for the M5 Pro / 48 GB Mac. The tool collects contrast directions, searches reversible edits against pinned Heretic inputs, exports the selected model, and verifies the actual imported model. This is an independent project, not an official Heretic release.
 
-**Status: experimental research toolkit.** The unchanged 27B export/import and bounded MLX loader have been tested on the target Mac. Direction collection, reversible edits, bounded generation, a gated small-study runner, resumable trials, and selected-projection merging are implemented. An experimental edited 27B checkpoint has been exported and imported locally as `qwen3.8-abliterated:27b-mlx`. It passed the small diagnostic answer-retention and short serving gates, but its subsequent Heretic standard refusal score was 98/100, unchanged from stock. A full-standard-data search is underway; this first candidate has not achieved the refusal-reduction goal. No model weights are included. The working name is `mlx-abliterate`; this is not an official Heretic project.
+**Validated local model:** `qwen3.8-abliterated:27b-m5`, served by the isolated native runtime on port 11435. The original `qwen3.8:27b-mlx` on port 11434 is preserved. Model weights and direction vectors are local artifacts, not public downloads in this repository.
 
-The completed full-data direction search reduced the dynamic standard score to **6/100**, with all eight search capability checks passed, versus 98/100 stock. This misses the predeclared ≤5/100 gate, so that candidate was not exported or installed. Focused refinements continue: a stronger edit reached 2/100 but regressed one stock-correct answer and was rejected. [Initial standard search](research/evidence/heretic-search-v2.json) · [Rejected 2/100 refinement](research/evidence/heretic-search-v5.json).
+| Measured check | Stock | Edited |
+|---|---:|---:|
+| Heretic standard100 keyword refusals | 98/100 | 2/100 |
+| Served exact-answer checks | 11/12 | 12/12 |
+| Median warm decode, balanced four-block check | 78.06 tokens/s | 74.79 tokens/s |
 
-The first target is the user's existing `qwen3.8:27b-mlx`: Qwen3.8-27B in Ollama's NVFP4 format, on an M5 Pro with 20 GPU cores. A prior same-prompt comparison measured 65.17 generated tokens/s on its warmed Ollama run, versus 12.35 tokens/s for a different RANA 6-bit checkpoint in `mlx-vlm`. Those results motivate preserving the existing serving path; they do not isolate the cause of the difference or establish relative quality.
+Every stock-correct answer was retained. Zero-edit outputs matched stock exactly on the tested schedule, and all 2,017 base tensor payloads remained unchanged. The candidate adds 128 FP32 vectors (2.5 MiB); the fused Metal correction avoids full-model BF16 expansion. All 199 Python tests and focused native numerical tests passed.
 
-## Local experimental model
+These are optimized benchmark results, not independent held-out evaluation. Heretic scoring uses fixed 100-token windows and its pinned keyword matcher; the 12 exact-answer checks are narrow. Speed uses all 40 warm samples per model, alternating model order, with competing browser GPU work paused equally for both arms. [Full evidence](research/evidence/native-final.json) · [Candidate and limitations](docs/CANDIDATE.md).
+
+## Run the installed model
+
+On the development Mac:
 
 ```sh
-ollama run qwen3.8-abliterated:27b-mlx
+cd ~/mlx-abliterate
+python3 scripts/native-model.py
 ```
 
-This tag is installed on the development Mac; it is not a public model download. The original `qwen3.8:27b-mlx` remains intact. The candidate removes the collected direction at strength 1.0 from 64 output projections in layers 16–47. See [candidate results](docs/CANDIDATE.md) for its evidence and limitations.
+The launcher checks the validated binary and model digest, starts the isolated server if needed, and opens chat with thinking disabled as tested. Add a prompt to run once, or `--status` to inspect the installation. It uses a 4096-token default context. Ordinary Ollama cannot load this custom architecture; use this launcher or explicitly point a client at `http://127.0.0.1:11435`.
+
+The earlier `qwen3.8-abliterated:27b-mlx` tag on port 11434 is a rejected historical experiment. Use the new `27b-m5` model through the native launcher.
 
 ## Approach
 
@@ -72,6 +83,6 @@ This is a systems and evaluation project. It is not a claim that abliteration im
 
 ## Repository and licensing
 
-Original implementation and documentation are licensed under MIT. No upstream implementation is vendored. Heretic is AGPL-3.0-or-later; the inspected MLX port has an Apache-2.0 license file. Their licenses do not change with this project's license. Record provenance before incorporating upstream code; see the source register.
+Original implementation and documentation are licensed under MIT. The native Ollama patch includes upstream context under its MIT license, preserved with pinned provenance in `native/ollama/`. Heretic is AGPL-3.0-or-later; the inspected MLX port has an Apache-2.0 license file. Their licenses do not change with this project's license. Record provenance before incorporating upstream code; see the source register.
 
 Development follows the staged plan, with public incremental commits. Model weights, local run artifacts, and private datasets are excluded.

@@ -1,0 +1,538 @@
+diff --git a/create/create.go b/create/create.go
+index 09d9913..457cf8a 100644
+--- a/create/create.go
++++ b/create/create.go
+@@ -427,6 +427,7 @@ func (cfg sourceModelConfig) HFFP8WeightBlockSize() (rows, cols int32, ok bool)
+ type tensorImportTransformFactory func(rawConfig json.RawMessage) (quantizePolicy, error)
+ 
+ var tensorImportTransformRegistry = map[string]tensorImportTransformFactory{
++	"Qwen3_5DirectionalForConditionalGeneration": newQwen35ImportTransform,
+ 	"Qwen3_5Model":                          newPplxImportTransform,
+ 	"KevForDecision":                        newQwen35DecisionImportTransform,
+ 	"AutoTrustDecision":                     newQwen35DecisionImportTransform,
+diff --git a/mlxrunner/model/qwen3_5/qwen3_5.go b/mlxrunner/model/qwen3_5/qwen3_5.go
+index 496b7b7..6c16c8e 100644
+--- a/mlxrunner/model/qwen3_5/qwen3_5.go
++++ b/mlxrunner/model/qwen3_5/qwen3_5.go
+@@ -18,6 +18,7 @@ import (
+ )
+ 
+ func init() {
++	model.Register(directionalArchitecture, NewModel)
+ 	model.Register("Qwen3_5ForCausalLM", NewModel)
+ 	model.Register("Qwen3_5ForConditionalGeneration", NewModel)
+ 	model.Register("Qwen3NextForCausalLM", NewModel)
+@@ -95,10 +96,11 @@ type Config struct {
+ 
+ // Model is the Qwen 3.5 model.
+ type Model struct {
+-	EmbedTokens nn.EmbeddingLayer
+-	Layers      []*Layer
+-	Norm        *nn.RMSNorm
+-	LMHead      nn.LinearLayer
++	directionalEdits *directionalConfig
++	EmbedTokens      nn.EmbeddingLayer
++	Layers           []*Layer
++	Norm             *nn.RMSNorm
++	LMHead           nn.LinearLayer
+ 
+ 	MTP             *MTPHead
+ 	auxHiddenLayers []int
+@@ -429,6 +431,11 @@ func NewModel(root *model.Root) (model.Model, error) {
+ 		return nil, err
+ 	}
+ 
++	directionalEdits, err := parseDirectionalConfig(configData, &cfg)
++	if err != nil {
++		return nil, err
++	}
++
+ 	if qt := root.QuantType(); qt != "" {
+ 		cfg.QuantGroupSize, cfg.QuantBits, cfg.QuantMode = model.QuantizationParams(qt)
+ 		if gs := root.GroupSize(); gs > 0 {
+@@ -463,11 +470,12 @@ func NewModel(root *model.Root) (model.Model, error) {
+ 	}
+ 
+ 	m := &Model{
+-		Layers: make([]*Layer, cfg.NumHiddenLayers),
+-		Config: &cfg,
+-		MM:     mm,
+-		Vision: mm.VisionConfig,
+-		tok:    tok,
++		directionalEdits: directionalEdits,
++		Layers:           make([]*Layer, cfg.NumHiddenLayers),
++		Config:           &cfg,
++		MM:               mm,
++		Vision:           mm.VisionConfig,
++		tok:              tok,
+ 	}
+ 
+ 	for i := range cfg.NumHiddenLayers {
+@@ -979,6 +987,10 @@ func (m *Model) LoadWeights(tensors map[string]*mlx.Array) error {
+ 		m.Layers[i] = layer
+ 	}
+ 
++	if err := m.applyDirectionalEdits(tensors, modelPrefix); err != nil {
++		return err
++	}
++
+ 	// Load the MTP head only when its tensors are present: a config may declare
+ 	// num_nextn_predict_layers while a package ships without them. mtp.* names
+ 	// carry no container prefix.
+diff --git a/create/directional_test.go b/create/directional_test.go
+new file mode 100644
+index 0000000..ded9f7f
+--- /dev/null
++++ b/create/directional_test.go
+@@ -0,0 +1,26 @@
++package create
++
++import (
++	"encoding/json"
++	"testing"
++
++	"github.com/ollama/ollama/mlxrunner"
++)
++
++func TestDirectionalArchitectureImportPolicy(t *testing.T) {
++	const arch = "Qwen3_5DirectionalForConditionalGeneration"
++	if !mlxrunner.SupportsArchitecture(arch) {
++		t.Fatal("custom architecture not registered")
++	}
++	factory, ok := tensorImportTransformRegistry[arch]
++	if !ok {
++		t.Fatal("missing Qwen import policy")
++	}
++	policy, err := factory(json.RawMessage(`{}`))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if _, ok := policy.(qwen35ImportTransform); !ok {
++		t.Fatal("custom architecture must retain Qwen import policy")
++	}
++}
+diff --git a/mlxrunner/model/qwen3_5/directional.go b/mlxrunner/model/qwen3_5/directional.go
+new file mode 100644
+index 0000000..fe4a7b7
+--- /dev/null
++++ b/mlxrunner/model/qwen3_5/directional.go
+@@ -0,0 +1,156 @@
++package qwen3_5
++
++// Original format extension for weight-preserving rank-one output edits.
++import (
++	"bytes"
++	"encoding/hex"
++	"encoding/json"
++	"fmt"
++	"math"
++	"strconv"
++	"strings"
++
++	"github.com/ollama/ollama/mlx"
++	"github.com/ollama/ollama/mlxrunner/nn"
++)
++
++const directionalArchitecture = "Qwen3_5DirectionalForConditionalGeneration"
++const directionTensorPrefix = "mlx_abliterate.direction."
++
++type directionalTarget struct {
++	Path            string   `json:"path"`
++	DirectionTensor string   `json:"direction_tensor"`
++	Strength        *float64 `json:"strength"`
++}
++type directionalConfig struct {
++	Version                int                 `json:"version"`
++	Method                 string              `json:"method"`
++	BaseContentFingerprint string              `json:"base_content_fingerprint"`
++	Targets                []directionalTarget `json:"targets"`
++}
++
++func directionalPaths(cfg *Config) map[string]bool {
++	paths := map[string]bool{}
++	for i := int32(0); i < cfg.NumHiddenLayers; i++ {
++		attention := "self_attn.o_proj"
++		if layerIsLinear(cfg, i) {
++			attention = "linear_attn.out_proj"
++		}
++		paths[fmt.Sprintf("model.layers.%d.%s", i, attention)] = true
++		paths[fmt.Sprintf("model.layers.%d.mlp.down_proj", i)] = true
++	}
++	return paths
++}
++
++func parseDirectionalConfig(data []byte, cfg *Config) (*directionalConfig, error) {
++	var top struct {
++		Architectures []string        `json:"architectures"`
++		Extension     json.RawMessage `json:"mlx_abliterate"`
++	}
++	if err := json.Unmarshal(data, &top); err != nil {
++		return nil, err
++	}
++	opted := len(top.Architectures) == 1 && top.Architectures[0] == directionalArchitecture
++	if !opted {
++		if len(top.Extension) > 0 {
++			return nil, fmt.Errorf("directional metadata requires explicit custom architecture")
++		}
++		return nil, nil
++	}
++	if len(top.Extension) == 0 || string(top.Extension) == "null" {
++		return nil, fmt.Errorf("missing directional metadata")
++	}
++	var ext directionalConfig
++	decoder := json.NewDecoder(bytes.NewReader(top.Extension))
++	decoder.DisallowUnknownFields()
++	if err := decoder.Decode(&ext); err != nil {
++		return nil, fmt.Errorf("directional metadata: %w", err)
++	}
++	if ext.Version != 1 || ext.Method != "weight_only_rank_one" {
++		return nil, fmt.Errorf("unsupported directional schema or method")
++	}
++	fingerprint, err := hex.DecodeString(ext.BaseContentFingerprint)
++	if err != nil || len(fingerprint) != 32 || strings.ToLower(ext.BaseContentFingerprint) != ext.BaseContentFingerprint {
++		return nil, fmt.Errorf("invalid base content fingerprint")
++	}
++	if cfg.NumHiddenLayers != 64 || cfg.HiddenSize != 5120 || cfg.NumExperts != 0 {
++		return nil, fmt.Errorf("directional v1 requires dense 64-layer 5120-width target")
++	}
++	if len(ext.Targets) == 0 || len(ext.Targets) > 128 {
++		return nil, fmt.Errorf("directional target count must be 1..128")
++	}
++	allowed := directionalPaths(cfg)
++	seen := map[string]bool{}
++	tensors := map[string]bool{}
++	for _, target := range ext.Targets {
++		if !allowed[target.Path] || seen[target.Path] {
++			return nil, fmt.Errorf("invalid or repeated directional target %q", target.Path)
++		}
++		if target.Strength == nil || math.IsNaN(*target.Strength) || math.IsInf(*target.Strength, 0) || *target.Strength < 0 || *target.Strength > 2 {
++			return nil, fmt.Errorf("invalid directional strength")
++		}
++		index, err := strconv.Atoi(strings.TrimPrefix(target.DirectionTensor, directionTensorPrefix))
++		if err != nil || index < 0 || index >= 128 || target.DirectionTensor != directionTensorPrefix+strconv.Itoa(index) || tensors[target.DirectionTensor] {
++			return nil, fmt.Errorf("invalid or repeated direction tensor")
++		}
++		seen[target.Path] = true
++		tensors[target.DirectionTensor] = true
++	}
++	return &ext, nil
++}
++
++func (m *Model) applyDirectionalEdits(tensors map[string]*mlx.Array, modelPrefix string) error {
++	expected := map[string]bool{}
++	if m.directionalEdits != nil {
++		for _, t := range m.directionalEdits.Targets {
++			expected[t.DirectionTensor] = true
++		}
++	}
++	for name := range tensors {
++		if strings.HasPrefix(name, "mlx_abliterate.") && !expected[name] {
++			return fmt.Errorf("unpaired directional tensor %q", name)
++		}
++	}
++	if m.directionalEdits == nil {
++		return nil
++	}
++	// Build an explicit map solely from main decoder layers; MTP cannot enter it.
++	slots := map[string]*nn.LinearLayer{}
++	for i, layer := range m.Layers {
++		prefix := fmt.Sprintf("model.layers.%d.", i)
++		if layer.Linear != nil {
++			slots[prefix+"linear_attn.out_proj"] = &layer.Linear.OutProj
++		}
++		if layer.FullAttn != nil {
++			slots[prefix+"self_attn.o_proj"] = &layer.FullAttn.OProj
++		}
++		if dense, ok := layer.MLP.(*DenseMLP); ok {
++			slots[prefix+"mlp.down_proj"] = &dense.DownProj
++		}
++	}
++	// Validate/build all wrappers before mutating any slot.
++	wrappers := map[string]*nn.DirectionalLinear{}
++	for _, target := range m.directionalEdits.Targets {
++		slot := slots[target.Path]
++		if slot == nil || *slot == nil {
++			return fmt.Errorf("missing directional projection %q", target.Path)
++		}
++		base, ok := (*slot).(*nn.QuantizedLinear)
++		if !ok || base.Mode != "nvfp4" || base.Bits != 4 || base.GroupSize != 16 {
++			return fmt.Errorf("directional v1 requires NVFP4 group16 base at %q", target.Path)
++		}
++		actualPath := modelPrefix + strings.TrimPrefix(target.Path, "model.")
++		if tensors[actualPath+".weight"] == nil {
++			return fmt.Errorf("missing directional source weight %q", actualPath)
++		}
++		wrapper, err := nn.NewDirectionalLinear(*slot, tensors[target.DirectionTensor], float32(*target.Strength))
++		if err != nil {
++			return fmt.Errorf("directional target %s: %w", target.Path, err)
++		}
++		wrappers[target.Path] = wrapper
++	}
++	for path, wrapper := range wrappers {
++		*slots[path] = wrapper
++	}
++	return nil
++}
+diff --git a/mlxrunner/model/qwen3_5/directional_test.go b/mlxrunner/model/qwen3_5/directional_test.go
+new file mode 100644
+index 0000000..f8a27e8
+--- /dev/null
++++ b/mlxrunner/model/qwen3_5/directional_test.go
+@@ -0,0 +1,90 @@
++package qwen3_5
++
++import (
++	"encoding/json"
++	"strings"
++	"testing"
++
++	"github.com/ollama/ollama/mlx"
++	"github.com/ollama/ollama/mlxrunner/model"
++)
++
++func TestDirectionalSchemaAdmission(t *testing.T) {
++	cfg := &Config{NumHiddenLayers: 64, HiddenSize: 5120, FullAttentionInterval: 4}
++	valid := func() map[string]any {
++		return map[string]any{"architectures": []string{directionalArchitecture}, "mlx_abliterate": map[string]any{"version": 1, "method": "weight_only_rank_one", "base_content_fingerprint": strings.Repeat("a", 64), "targets": []any{map[string]any{"path": "model.layers.0.linear_attn.out_proj", "direction_tensor": "mlx_abliterate.direction.0", "strength": 1.575}}}}
++	}
++	cases := []struct {
++		name   string
++		change func(map[string]any)
++	}{
++		{"missing metadata", func(v map[string]any) { delete(v, "mlx_abliterate") }},
++		{"stock architecture", func(v map[string]any) { v["architectures"] = []string{"Qwen3_5ForConditionalGeneration"} }},
++		{"schema", func(v map[string]any) { v["mlx_abliterate"].(map[string]any)["version"] = 2 }},
++		{"unknown field", func(v map[string]any) { v["mlx_abliterate"].(map[string]any)["typo"] = 1 }},
++		{"fingerprint", func(v map[string]any) { v["mlx_abliterate"].(map[string]any)["base_content_fingerprint"] = "x" }},
++		{"missing strength", func(v map[string]any) {
++			delete(v["mlx_abliterate"].(map[string]any)["targets"].([]any)[0].(map[string]any), "strength")
++		}},
++		{"strength bounds", func(v map[string]any) {
++			v["mlx_abliterate"].(map[string]any)["targets"].([]any)[0].(map[string]any)["strength"] = 2.00000001
++		}},
++		{"mtp", func(v map[string]any) {
++			v["mlx_abliterate"].(map[string]any)["targets"].([]any)[0].(map[string]any)["path"] = "mtp.layers.0.mlp.down_proj"
++		}},
++		{"wrong attention", func(v map[string]any) {
++			v["mlx_abliterate"].(map[string]any)["targets"].([]any)[0].(map[string]any)["path"] = "model.layers.0.self_attn.o_proj"
++		}},
++		{"duplicate", func(v map[string]any) {
++			e := v["mlx_abliterate"].(map[string]any)
++			a := e["targets"].([]any)
++			e["targets"] = append(a, a[0])
++		}},
++		{"bad tensor", func(v map[string]any) {
++			v["mlx_abliterate"].(map[string]any)["targets"].([]any)[0].(map[string]any)["direction_tensor"] = "model.embed_tokens.weight"
++		}},
++	}
++	raw, _ := json.Marshal(valid())
++	parsed, err := parseDirectionalConfig(raw, cfg)
++	if err != nil || parsed == nil {
++		t.Fatalf("valid: %v", err)
++	}
++	if !model.SupportsArchitecture(directionalArchitecture) {
++		t.Fatal("custom architecture not registered")
++	}
++	for _, tc := range cases {
++		t.Run(tc.name, func(t *testing.T) {
++			v := valid()
++			tc.change(v)
++			raw, _ := json.Marshal(v)
++			if _, err := parseDirectionalConfig(raw, cfg); err == nil {
++				t.Fatal("accepted invalid extension")
++			}
++		})
++	}
++	if got, err := parseDirectionalConfig([]byte(`{"architectures":["Qwen3_5ForConditionalGeneration"]}`), cfg); err != nil || got != nil {
++		t.Fatal("ordinary config changed")
++	}
++	cfg.HiddenSize = 4096
++	if _, err := parseDirectionalConfig(raw, cfg); err == nil {
++		t.Fatal("accepted unsupported model shape")
++	}
++}
++
++func TestDirectionalTensorPairing(t *testing.T) {
++	m := &Model{}
++	if err := m.applyDirectionalEdits(map[string]*mlx.Array{"mlx_abliterate.direction.0": nil}, "model."); err == nil {
++		t.Fatal("ordinary model accepted extension tensor")
++	}
++	if err := m.applyDirectionalEdits(map[string]*mlx.Array{}, "model."); err != nil {
++		t.Fatal(err)
++	}
++	strength := 1.0
++	m.directionalEdits = &directionalConfig{Targets: []directionalTarget{{Path: "model.layers.0.mlp.down_proj", DirectionTensor: "mlx_abliterate.direction.0", Strength: &strength}}}
++	if err := m.applyDirectionalEdits(map[string]*mlx.Array{}, "model."); err == nil {
++		t.Fatal("accepted missing main layer")
++	}
++	if err := m.applyDirectionalEdits(map[string]*mlx.Array{"mlx_abliterate.direction.1": nil}, "model."); err == nil {
++		t.Fatal("accepted unpaired tensor")
++	}
++}
+diff --git a/mlxrunner/nn/directional.go b/mlxrunner/nn/directional.go
+new file mode 100644
+index 0000000..5bbc21e
+--- /dev/null
++++ b/mlxrunner/nn/directional.go
+@@ -0,0 +1,84 @@
++package nn
++
++// Original experimental output-direction wrapper. Base weights remain packed.
++// Arithmetic order mirrors mlx_abliterate.edits.DirectionalProjection.
++import (
++	"fmt"
++	"math"
++
++	"github.com/ollama/ollama/mlx"
++)
++
++type DirectionalLinear struct {
++	Base      LinearLayer
++	Direction *mlx.Array
++	Strength  float32
++	Bias      *mlx.Array
++	Scale     *mlx.Array
++}
++
++// ValidateUnitDirection runs without MLX and rejects corrupt extension data.
++func ValidateUnitDirection(values []float32, width int) error {
++	if len(values) != width || width == 0 {
++		return fmt.Errorf("direction width mismatch")
++	}
++	norm := float64(0)
++	for _, v := range values {
++		if math.IsNaN(float64(v)) || math.IsInf(float64(v), 0) {
++			return fmt.Errorf("direction must be finite")
++		}
++		norm += float64(v) * float64(v)
++	}
++	if math.Abs(math.Sqrt(norm)-1) > 1e-5 {
++		return fmt.Errorf("direction must have unit norm")
++	}
++	return nil
++}
++
++func NewDirectionalLinear(base LinearLayer, direction *mlx.Array, strength float32) (*DirectionalLinear, error) {
++	if base == nil || direction == nil {
++		return nil, fmt.Errorf("missing directional base or tensor")
++	}
++	if math.IsNaN(float64(strength)) || math.IsInf(float64(strength), 0) || strength < 0 || strength > 2 {
++		return nil, fmt.Errorf("invalid directional strength")
++	}
++	if direction.DType() != mlx.DTypeFloat32 || direction.NumDims() != 1 || direction.Dim(0) != int(base.OutputDim()) {
++		return nil, fmt.Errorf("direction must be FP32 output-width vector")
++	}
++	if err := ValidateUnitDirection(direction.Floats(), int(base.OutputDim())); err != nil {
++		return nil, err
++	}
++	var bias *mlx.Array
++	switch b := base.(type) {
++	case *Linear:
++		bias = b.Bias
++	case *QuantizedLinear:
++		bias = b.Bias // QBiases are quantization offsets, never ordinary bias.
++	default:
++		return nil, fmt.Errorf("unsupported directional base %T", base)
++	}
++	if bias != nil && (bias.NumDims() != 1 || bias.Dim(0) != int(base.OutputDim())) {
++		return nil, fmt.Errorf("ordinary bias width mismatch")
++	}
++	// Match Python's normalization, including the second normalization of an
++	// already approximately unit spec vector. Never normalize in float64.
++	scaled := direction.Divide(direction.Abs().MaxAxis(0, false))
++	normalized := scaled.Divide(scaled.Multiply(scaled).SumAxis(0, false).Sqrt())
++	mlx.Eval(normalized)
++	return &DirectionalLinear{Base: base, Direction: normalized, Strength: strength, Bias: bias, Scale: mlx.NewScalarArray(strength)}, nil
++}
++
++func (l *DirectionalLinear) OutputDim() int32 { return l.Base.OutputDim() }
++func (l *DirectionalLinear) Forward(x *mlx.Array) *mlx.Array {
++	output := l.Base.Forward(x)
++	if l.Strength == 0 {
++		return output
++	}
++	value := output.AsType(mlx.DTypeFloat32)
++	if l.Bias != nil {
++		value = value.Subtract(l.Bias.AsType(mlx.DTypeFloat32))
++	}
++	coefficient := value.Multiply(l.Direction).SumAxis(-1, true)
++	correction := l.Scale.Multiply(coefficient).Multiply(l.Direction).AsType(output.DType())
++	return output.Subtract(correction)
++}
+diff --git a/mlxrunner/nn/directional_test.go b/mlxrunner/nn/directional_test.go
+new file mode 100644
+index 0000000..ee73c6c
+--- /dev/null
++++ b/mlxrunner/nn/directional_test.go
+@@ -0,0 +1,71 @@
++package nn
++
++import (
++	"math"
++	"testing"
++
++	"github.com/ollama/ollama/mlx"
++	"github.com/ollama/ollama/mlx/mlxtest"
++)
++
++func TestValidateUnitDirection(t *testing.T) {
++	for _, v := range [][]float32{{0, 0}, {2, 0}, {float32(math.NaN()), 0}, {float32(math.Inf(1)), 0}, {1}} {
++		if ValidateUnitDirection(v, 2) == nil {
++			t.Fatalf("accepted %v", v)
++		}
++	}
++	if err := ValidateUnitDirection([]float32{0.6, 0.8}, 2); err != nil {
++		t.Fatal(err)
++	}
++}
++
++type fixedDirectionalBase struct{ output *mlx.Array }
++
++func (f *fixedDirectionalBase) Forward(*mlx.Array) *mlx.Array { return f.output }
++func (*fixedDirectionalBase) OutputDim() int32                { return 2 }
++
++func TestDirectionalZeroReturnsExactHandle(t *testing.T) {
++	output := &mlx.Array{}
++	wrapper := &DirectionalLinear{Base: &fixedDirectionalBase{output: output}, Strength: 0}
++	if wrapper.Forward(nil) != output {
++		t.Fatal("zero did not return original handle")
++	}
++}
++
++func TestDirectionalArithmeticAndBias(t *testing.T) {
++	mlxtest.Run(t, func(t *mlxtest.T) {
++		weights := mlx.FromValues([]float32{1, 0, 0, 1}, 2, 2)
++		bias := mlx.FromValues([]float32{4, 5}, 2)
++		base := NewLinear(weights, bias)
++		direction := mlx.FromValues([]float32{1, 0}, 2)
++		wrapper, err := NewDirectionalLinear(base, direction, 1)
++		if err != nil {
++			t.Fatal(err)
++		}
++		collected := mlx.Collect(wrapper)
++		foundScale := false
++		for _, a := range collected {
++			if a == wrapper.Scale {
++				foundScale = true
++			}
++		}
++		if !foundScale {
++			t.Fatal("scale is not retained by model scope")
++		}
++		input := mlx.FromValues([]float32{2, 3, 7, 11}, 2, 2)
++		got := wrapper.Forward(input).Floats()
++		want := []float32{4, 8, 4, 16}
++		for i := range want {
++			if got[i] != want[i] {
++				t.Fatalf("got %v want %v", got, want)
++			}
++		}
++		if _, err := NewDirectionalLinear(base, mlx.FromValues([]float32{2, 0}, 2), 1); err == nil {
++			t.Fatal("accepted nonunit direction")
++		}
++		if _, err := NewDirectionalLinear(base, direction, 3); err == nil {
++			t.Fatal("accepted strength3")
++		}
++
++	})
++}

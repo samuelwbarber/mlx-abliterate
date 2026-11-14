@@ -1,0 +1,2 @@
+# Unified diff context preserves leading spaces and tabs by design.
+native/ollama/*.patch -whitespace

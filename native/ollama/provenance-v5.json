@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "upstream": "https://github.com/ollama/ollama",
+  "upstream_revision": "d63b702609c4300a2ca07be2bdb0adb9834725e5",
+  "upstream_license": "MIT",
+  "patch_authorship": "Original implementation against public Go MLX interfaces; no Heretic implementation copied",
+  "patch_sha256": "b4d3a682e35b8f12b0e2e6b8e425268663766a2e6f548402869c4965c0be60c4",
+  "files": {
+    "create/create.go": "995f6eba07303eaea50b47d77d8b84d87beb2adbcca608aae7f09adbddea4a95",
+    "create/directional_test.go": "78a13d0884943a13b90886d3d7c575bf562668f43b5dedd49e869cf51ec34481",
+    "mlxrunner/model/qwen3_5/qwen3_5.go": "c9307f1cbc5f64fb3c2cd00a48d6617a8f2cb06886538289508c8598061e75f5",
+    "mlxrunner/model/qwen3_5/directional.go": "22f9b9e049e0468f96240813af62dce67f5aa6ea3ab42aa2bb71883189aa8331",
+    "mlxrunner/model/qwen3_5/directional_test.go": "bd5e8de4731e401c3ace0a1f14571252a277d517f886d21c162e35ab74bd0cba",
+    "mlxrunner/nn/directional.go": "28e765b3d4f8c2e242c41fa2c1ee782ea6f597e0d98fd913e92a148b927732d5",
+    "mlxrunner/nn/directional_test.go": "3f7f2b30b86a6dbabd0e8bb7ad0f3314322bdde4f2bbbac335a26acb202b859a",
+    "mlx/directional.go": "b66b7ec3582b6fd0e9180251098a9bfa2153b8667f87bf593274e244e972fa33"
+  },
+  "binary_sha256": "2728e2477be4af63df71b21cf8f0edb09ef3003c7c476b19f05bb2a072bcb94e",
+  "version": "0.40.16-directional-v5",
+  "go": "1.26.11",
+  "build_command": "go build -ldflags '-X github.com/ollama/ollama/version.Version=0.40.16-directional-v5' -o ./ollama-directional-v5 .",
+  "native_payload_manifest": "runs/native-payload-copy.json",
+  "tests": [
+    "go test ./mlxrunner/nn ./mlxrunner/model/qwen3_5 ./create -run TestDirectional|TestValidateUnitDirection -count=1"
+  ],
+  "limits": [
+    "Build-time tests cover tiny numerical fixtures; full-model validation is recorded separately in research/evidence.",
+    "Source fingerprint is provenance metadata; external export/import integrity checks bind the actual base weights",
+    "Custom architecture is unsupported by stock Ollama",
+    "Existing stock app and model store unchanged"
+  ],
+  "created_utc": "2026-11-14T09:12:21.547731+00:00",
+  "optimization": "Direction reduction, correction and decoder residual addition fused in one Metal kernel, preserving intermediate dtype rounding; one CGo dispatch call. Stock and MTP semantics unchanged."
+}

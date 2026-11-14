@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "upstream": "https://github.com/ollama/ollama",
+  "upstream_revision": "d63b702609c4300a2ca07be2bdb0adb9834725e5",
+  "upstream_license": "MIT",
+  "patch_authorship": "Original implementation against public Go MLX interfaces; no Heretic implementation copied",
+  "patch_sha256": "3eb5818c9f0551e25b702690df126bcdf877864adefb97883ba7b341ec51ea52",
+  "files": {
+    "create/create.go": "995f6eba07303eaea50b47d77d8b84d87beb2adbcca608aae7f09adbddea4a95",
+    "create/directional_test.go": "78a13d0884943a13b90886d3d7c575bf562668f43b5dedd49e869cf51ec34481",
+    "mlxrunner/model/qwen3_5/qwen3_5.go": "6593c72880f692f25d57f261b6fa81f71813b55f0f71de9090eaea21215a2fa4",
+    "mlxrunner/model/qwen3_5/directional.go": "a2a21245d23380257fede01d348fdf2abf594805cc4fadec83af2f7c606508e0",
+    "mlxrunner/model/qwen3_5/directional_test.go": "bd5e8de4731e401c3ace0a1f14571252a277d517f886d21c162e35ab74bd0cba",
+    "mlxrunner/nn/directional.go": "14d976a443fa9b2c86dc604408f39995240d8f310ccea9b3b6ca9f8bfdc937f2",
+    "mlxrunner/nn/directional_test.go": "f80972245b847c5cd787739daaa47979aeaf1d691f79b3cde53aec5a9ff6d6bc"
+  },
+  "binary_sha256": "42fcc3e1132c7cdd0ac87856070167007947aac26f404b8b87e915e3dd3f6a19",
+  "version": "0.40.16-directional-v1",
+  "go": "1.26.11",
+  "build_command": "go build -ldflags '-X github.com/ollama/ollama/version.Version=0.40.16-directional-v1' -o ./ollama-directional .",
+  "native_payload_manifest": "runs/native-payload-copy.json",
+  "tests": [
+    "go test ./mlxrunner/nn ./mlxrunner/model/qwen3_5 -run TestDirectional|TestValidateUnitDirection -count=1",
+    "go test ./create -run TestDirectionalArchitectureImportPolicy -count=1"
+  ],
+  "limits": [
+    "Build-time tests cover tiny numerical fixtures; full-model validation is recorded separately in research/evidence.",
+    "Source fingerprint is provenance metadata; external export/import integrity checks bind the actual base weights",
+    "Custom architecture is unsupported by stock Ollama",
+    "Existing stock app and model store unchanged"
+  ],
+  "created_utc": "2026-11-14T02:26:16.411358+00:00"
+}

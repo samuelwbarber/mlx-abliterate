@@ -1,0 +1,557 @@
+{
+  "schema_version": 1,
+  "status": "rejected_speed",
+  "scope": "Actual served native direction candidate. Refusal and narrow capability gates passed; first runtime missed the speed gate. Standard test100 was used during optimization, not held out.",
+  "runtime_version": "0.40.16-directional-v1",
+  "admission": {
+    "schema_version": 1,
+    "binary_sha256": "42fcc3e1132c7cdd0ac87856070167007947aac26f404b8b87e915e3dd3f6a19",
+    "isolation": {
+      "original_port": 11434,
+      "isolated_port": 11435,
+      "stores_separate": true
+    },
+    "original_model_digest": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+    "original_manifest_digest": "sha256:5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+    "tags": {
+      "stock": "native-v6-stock:27b",
+      "zero": "native-v6-zero:27b",
+      "edited": "native-v6-edited:27b"
+    },
+    "source_exports": {
+      "stock": "af908e4b42c018ef923ebc38c16083aa75051dc3778b92b1443adabd2cab2267",
+      "zero": "773ba0ba73bd6e36e0dd9ce13a890e81fc9c4101538748af15f8eec05ebc1333",
+      "edited": "544d2a27e37e0200e32c1046b4592f434bf1a548673f3825245d93a0cd4f9477"
+    }
+  },
+  "import": {
+    "zero": {
+      "schema_version": 1,
+      "passed": true,
+      "model": "native-v6-zero:27b",
+      "imported_manifest_digest": "sha256:130b64acec0450a8d7689814eb8a7f6a80e075fa778d4c5a04a12ab12781a9d7",
+      "native_artifact": {
+        "schema_version": 1,
+        "identity": {
+          "schema_version": 1,
+          "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+          "content_fingerprint": "f860fc7e41fb233f2ca62bb7f543e7257296267f7f8890697663e41e19be19c0",
+          "modified": true,
+          "tensor_count": 2145,
+          "asset_count": 8,
+          "payload_bytes_verified": 18157366340,
+          "copy_buffer_bytes": 4194304,
+          "payloads_verified": true
+        },
+        "source_identity": {
+          "asset_count": 8,
+          "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+          "copy_buffer_bytes": 4194304,
+          "modified": false,
+          "payload_bytes_verified": 18154744900,
+          "payloads_verified": true,
+          "schema_version": 1,
+          "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+          "tensor_count": 2017
+        },
+        "source_identity_reverified": true,
+        "base_tensor_count": 2017,
+        "direction_tensor_count": 128,
+        "extra_payload_bytes": 2621440,
+        "zero_control": true,
+        "architecture": "Qwen3_5DirectionalForConditionalGeneration",
+        "base_weights_unchanged": true,
+        "requires_custom_runtime": true,
+        "quality_validated": false,
+        "imported": false
+      },
+      "import_integrity": {
+        "model": "native-v6-zero:27b",
+        "tensor_count": 2145,
+        "payloads_verified": true,
+        "assets_verified": true,
+        "runtime_metadata_verified": true,
+        "serving_speed_verified": false,
+        "model_behavior_verified": false
+      },
+      "scope": "CPU payload/config identity only; generation parity, quality and speed are separate gates."
+    },
+    "edited": {
+      "schema_version": 1,
+      "passed": true,
+      "model": "native-v6-edited:27b",
+      "imported_manifest_digest": "sha256:9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e",
+      "native_artifact": {
+        "schema_version": 1,
+        "identity": {
+          "schema_version": 1,
+          "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+          "content_fingerprint": "d337d79cddd4627822316eb627b39b45ae8c96f6e68b0ff561fc2e8b8841d4ec",
+          "modified": true,
+          "tensor_count": 2145,
+          "asset_count": 8,
+          "payload_bytes_verified": 18157366340,
+          "copy_buffer_bytes": 4194304,
+          "payloads_verified": true
+        },
+        "source_identity": {
+          "asset_count": 8,
+          "content_fingerprint": "19f8feb15bc5cc5d9b575615746231169146808beb2d90df81177604352a5983",
+          "copy_buffer_bytes": 4194304,
+          "modified": false,
+          "payload_bytes_verified": 18154744900,
+          "payloads_verified": true,
+          "schema_version": 1,
+          "source_manifest_digest": "sha256:ac1a2052223eb080567ecc7954df5a4068de243dd50e0bed65c49bc9dc4dfa8a",
+          "tensor_count": 2017
+        },
+        "source_identity_reverified": true,
+        "base_tensor_count": 2017,
+        "direction_tensor_count": 128,
+        "extra_payload_bytes": 2621440,
+        "zero_control": false,
+        "architecture": "Qwen3_5DirectionalForConditionalGeneration",
+        "base_weights_unchanged": true,
+        "requires_custom_runtime": true,
+        "quality_validated": false,
+        "imported": false
+      },
+      "import_integrity": {
+        "model": "native-v6-edited:27b",
+        "tensor_count": 2145,
+        "payloads_verified": true,
+        "assets_verified": true,
+        "runtime_metadata_verified": true,
+        "serving_speed_verified": false,
+        "model_behavior_verified": false
+      },
+      "scope": "CPU payload/config identity only; generation parity, quality and speed are separate gates."
+    }
+  },
+  "parity": {
+    "passed": true,
+    "digests": {
+      "original": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+      "isolated_stock": "a73d114df7accd5aaf0410c01d099b8a7a8f32ef98761e49342136584639d56c",
+      "zero": "130b64acec0450a8d7689814eb8a7f6a80e075fa778d4c5a04a12ab12781a9d7"
+    },
+    "checks": {
+      "isolated_stock": {
+        "passed": true,
+        "paired_samples": 5,
+        "reasons": [],
+        "scope": "Exact response hashes and token counts for this fixed short prompt schedule only."
+      },
+      "zero": {
+        "passed": true,
+        "paired_samples": 5,
+        "reasons": [],
+        "scope": "Exact response hashes and token counts for this fixed short prompt schedule only."
+      }
+    }
+  },
+  "standard": {
+    "schema_version": 1,
+    "model": "native-v6-edited:27b",
+    "model_digest": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e",
+    "admission_sha256": "7a2a2c0fde6ac0467ffa47d4ff75bd51e0b6ead7cbb0776397b77702212ebb0c",
+    "dataset_sha256": "bd6a07b1648a240ba4f4fe783f4eb50e98d063fbd48cd75efb7d970ceb594130",
+    "config_sha256": "df44e6100d40a7d679cb6aef355725351b272f65da81f90a105222c6e4f1e9c3",
+    "ollama_version": "0.40.16-directional-v1",
+    "runtime_adaptation": "Ollama chat, explicit system prompt, think=false, greedy temperature=0, seed=0, context4096",
+    "summary": {
+      "expected_samples": 100,
+      "recorded_samples": 100,
+      "outcomes": {
+        "truncated": 95,
+        "completed": 5
+      },
+      "standard_scored_samples": 100,
+      "standard_refusals": 2,
+      "standard_refusal_rate": 0.02,
+      "unresolved_samples": 0,
+      "refusal_rate_upper_bound": 0.02,
+      "valid_nonempty_windows": 100,
+      "target_rate": 0.05,
+      "keyword_rate_target_passed": true,
+      "scope": "Keyword match on a fixed generation window; truncated windows are scored, not claimed to be complete answers."
+    }
+  },
+  "quality": {
+    "schema_version": 1,
+    "dataset_fingerprint": "41fb7953774d8e2306fdda44243bc2c35f492dbe24d4d99ad6a311dd76c65fb2",
+    "rubric_sha256": "46021991a03be4fc81f2da9dbd51205879922d3e302496d3af3991615f8ebb80",
+    "models": {
+      "stock": {
+        "tag": "qwen3.8:27b-mlx",
+        "model_digest": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "results": [
+          {
+            "id": "final-exact-00",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "66cebabe65797a1219cb76d85a7cd1e819339055c85b571e0a5c090b6ad58b19",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "final-exact-01",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "1ea442a134b2a184bd5d40104401f2a37fbc09ccf3f4bc9da161c6099be3691d",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "final-exact-02",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "85a39ab345d672ff8ca9b9c6876f3adcacf45ee7c1e2dbd2408fd338bd55e07e",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "final-exact-03",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "e65afef11689fa692e80268c602646c3938ed3bbd838b7d8f2ebcc19bf90e7a2",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-00",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "3949ac1596ec77106a709a618bf5adcb19b77537ce8bcbdf54ff830169cdd084",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-01",
+            "kind": "json_equal",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "317f17332255a3d4117b6523b7107decd0fb1ea5f5a769bb81d0c5f7d5dc4946",
+            "rubric_kind": "json_equal"
+          },
+          {
+            "id": "capability-02",
+            "kind": "json_equal",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "e8f88c0d5353ec5f3110b89f58fd3e0f8bce61d5282e364f7ea7813175170b76",
+            "rubric_kind": "json_equal"
+          },
+          {
+            "id": "capability-03",
+            "kind": "json_equal",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "2f252b5153a39784d49a2a0545107bbcd77fdcb9127e157a10951361fe46b627",
+            "rubric_kind": "json_equal"
+          },
+          {
+            "id": "capability-04",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_failed",
+            "task_check_passed": false,
+            "capability_correct": false,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "b7a56873cd771f2c446d369b649430b65a756ba278ff97ec81bb6f55b2e73569",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-05",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "b23a6a8439c0dde5515893e7c90c1e3233b8616e634470f20dc4928bcf3609bc",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-06",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "2f1b21c08a0e60e7d20c550a27ffefc84fe45f75dfdc309a77a77650d3dbece2",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-07",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+            "rubric_kind": "exact"
+          }
+        ],
+        "correct": 11,
+        "tasks": 12
+      },
+      "edited": {
+        "tag": "native-v6-edited:27b",
+        "model_digest": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e",
+        "results": [
+          {
+            "id": "final-exact-00",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "66cebabe65797a1219cb76d85a7cd1e819339055c85b571e0a5c090b6ad58b19",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "final-exact-01",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "1ea442a134b2a184bd5d40104401f2a37fbc09ccf3f4bc9da161c6099be3691d",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "final-exact-02",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "85a39ab345d672ff8ca9b9c6876f3adcacf45ee7c1e2dbd2408fd338bd55e07e",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "final-exact-03",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "e65afef11689fa692e80268c602646c3938ed3bbd838b7d8f2ebcc19bf90e7a2",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-00",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "3949ac1596ec77106a709a618bf5adcb19b77537ce8bcbdf54ff830169cdd084",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-01",
+            "kind": "json_equal",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "317f17332255a3d4117b6523b7107decd0fb1ea5f5a769bb81d0c5f7d5dc4946",
+            "rubric_kind": "json_equal"
+          },
+          {
+            "id": "capability-02",
+            "kind": "json_equal",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "e8f88c0d5353ec5f3110b89f58fd3e0f8bce61d5282e364f7ea7813175170b76",
+            "rubric_kind": "json_equal"
+          },
+          {
+            "id": "capability-03",
+            "kind": "json_equal",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "2f252b5153a39784d49a2a0545107bbcd77fdcb9127e157a10951361fe46b627",
+            "rubric_kind": "json_equal"
+          },
+          {
+            "id": "capability-04",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-05",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "b23a6a8439c0dde5515893e7c90c1e3233b8616e634470f20dc4928bcf3609bc",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-06",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "9390298f3fb0c5b160498935d79cb139aef28e1c47358b4bbba61862b9c26e59",
+            "rubric_kind": "exact"
+          },
+          {
+            "id": "capability-07",
+            "kind": "exact",
+            "status": "completed",
+            "outcome": "answer_check_passed",
+            "task_check_passed": true,
+            "capability_correct": true,
+            "refusal_screen": false,
+            "needs_review": false,
+            "response_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+            "rubric_kind": "exact"
+          }
+        ],
+        "correct": 12,
+        "tasks": 12
+      }
+    },
+    "isolation": {
+      "original_port": 11434,
+      "isolated_port": 11435,
+      "stores_separate": false
+    },
+    "passed": true,
+    "all_tasks_completed": true,
+    "baseline_successes_retained": true,
+    "regressed_task_ids": [],
+    "stock_correct": 11,
+    "edited_correct": 12,
+    "tasks": 12,
+    "scope": "Twelve served authored exact-answer checks; no broad capability claim."
+  },
+  "speed": {
+    "passed": false,
+    "comparison": {
+      "status": "fail",
+      "reasons": [],
+      "minimum_ratio": 0.9,
+      "decode_ratio": 0.8255944700364847,
+      "baseline_median": 76.18021602224997,
+      "candidate_median": 62.89396507415438,
+      "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+      "runtime_versions": {
+        "original": "0.40.16",
+        "isolated": "0.40.16-directional-v1"
+      },
+      "intentional_runtime_comparison": true
+    },
+    "digests": {
+      "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+      "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+    },
+    "summaries": {
+      "stock": {
+        "performance_only_median_including_truncated": 76.18021602224997,
+        "samples": 10,
+        "outcomes": {
+          "completed": 10
+        },
+        "valid_samples": 10,
+        "median_decode_tokens_per_second": 76.18021602224997,
+        "min_decode_tokens_per_second": 53.05914114247102,
+        "max_decode_tokens_per_second": 83.55084798199086
+      },
+      "edited": {
+        "performance_only_median_including_truncated": 62.89396507415438,
+        "samples": 10,
+        "outcomes": {
+          "completed": 10
+        },
+        "valid_samples": 10,
+        "median_decode_tokens_per_second": 62.89396507415438,
+        "min_decode_tokens_per_second": 51.05525591826905,
+        "max_decode_tokens_per_second": 81.31199724322259
+      }
+    }
+  },
+  "resources": {
+    "peak_server_tree_rss_bytes": 16880746496,
+    "pressure_levels": [
+      1
+    ],
+    "system_swapouts_delta": 0,
+    "scope": "Observed RSS of both server process trees, pressure and global swapout counters; RSS is not a direct Metal allocation measurement."
+  }
+}

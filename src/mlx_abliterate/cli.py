@@ -95,6 +95,14 @@ def parser() -> argparse.ArgumentParser:
     merge.add_argument("destination", type=Path)
     merge.add_argument("--edit-spec", required=True, type=Path)
     merge.add_argument("--output", type=Path)
+    native = commands.add_parser('native-export',
+        help='Preserve packed base weights and export selected directions for the native Metal runtime')
+    native.add_argument('export_directory', type=Path)
+    native.add_argument('destination', type=Path)
+    native.add_argument('--edit-spec', required=True, type=Path)
+    native.add_argument('--selection-report', required=True, type=Path)
+    native.add_argument('--zero-strength', action='store_true')
+    native.add_argument('--output', type=Path)
     heretic = commands.add_parser('heretic-benchmark',
                                   help='Measure pinned Heretic keyword refusal rate through Ollama')
     heretic.add_argument('model', help='Exact installed Ollama tag')
@@ -194,6 +202,10 @@ def main(argv: list[str] | None = None) -> int:
                                 args.capability_dataset, args.capability_rubrics, args.run_dir,
                                 candidates=candidates, shortlist_size=args.shortlist_size,
                                 standard_only=args.standard_only)
+        elif args.command == 'native-export':
+            from .native_edit_export import export_native_edits
+            report = export_native_edits(args.export_directory, args.destination, args.edit_spec,
+                                         args.selection_report, zero_strength=args.zero_strength)
         elif args.command == "merge":
             from .merge import merge_export, read_edit_spec
             spec, _ = read_edit_spec(args.edit_spec)

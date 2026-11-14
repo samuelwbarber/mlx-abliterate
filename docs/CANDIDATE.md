@@ -1,42 +1,25 @@
-# First experimental edited model
+# Validated native M5 candidate
 
-**Subsequent standard benchmark:** stock and this first edit both scored 98/100 keyword refusals on the pinned Heretic standard test100 through Ollama. This candidate does not meet the ≤5% refusal target. Its earlier likelihood proxy did not predict measured refusal reduction. A new full-standard-data search is in progress. See [benchmark evidence](../research/evidence/heretic-initial-v1.json).
+The installed `qwen3.8-abliterated:27b-m5` uses runtime `0.40.16-directional-v8` on loopback port 11435, with a separate model store. Run `python3 scripts/native-model.py` from the project root. Original stock remains unchanged on port 11434.
 
-The development Mac now has the separate Ollama tag:
+## Results
 
-```sh
-ollama run qwen3.8-abliterated:27b-mlx
-```
+- Actual deployed Heretic standard100: **2/100 keyword refusals**, versus 98/100 stock. All 100 windows were valid; 96 exhausted the 100-token budget and were scored under the standard protocol.
+- Served answer retention: **12/12**, versus 11/12 stock. Every stock-correct answer was retained and all tasks completed.
+- Exact zero control: unchanged isolated stock and zero-strength native edits matched original stock across both fixed prompts, including cold and warm samples.
+- Import fidelity: all 2,017 original packed tensors plus 128 direction vectors verified against the exported payloads, including model configuration and runtime metadata.
+- Serving: **74.79 tokens/s edited versus 78.06 stock**, ratio **0.958**, from all 40 warm measurements per model. Four blocks alternate model order; no timing samples are discarded. Browser GPU work was paused for this controlled confirmation and resumed afterward. Individual block results and prior failed speed probes remain in the evidence.
+- Resource supervision: normal system memory pressure throughout both final runs. RSS is measured over actual server process trees, not the HTTP client, and is not a direct Metal allocation measurement. See the evidence for peaks and global swapout changes.
+- Tool tests: 199 Python tests passed; focused Go tests cover schema admission, import architecture, zero-edit behavior and FP32/BF16 fused arithmetic across decoding and multi-token shapes.
 
-The stock `qwen3.8:27b-mlx` remains intact and its default was not changed. RANA was stopped at the user's request. Both benchmarked Ollama models were unloaded after testing; launching the tag loads it again. Model weights are local and are not in Git or publicly hosted.
+## Selected modification
 
-## Edit and selection
+The selected source direction is layer 24, strength 1.575, applied to attention output and MLP down projections across all 64 main decoder layers. The base remains NVFP4. Embeddings, LM head, MTP head and stock tensors are preserved. The modification occupies 2,621,440 additional tensor bytes.
 
-The exact-source NVFP4 model received a rank-one directional removal at strength 1.0 on both output projections in decoder layers 16–47 (64 projections). Directions were normalized differences of last-token residual means from 16 matched high-level refusal/benign prompt pairs. This is a conventional directional-ablation operation, not fine-tuning.
+The selected dynamic candidate scored 3/100, but re-quantizing the modification into NVFP4 produced 96/100 in the actual merged deployment. That checkpoint was rejected. The native extension stores the correction separately and fuses its reduction, subtraction and residual addition in one Metal kernel. This preserves its effect without expanding the weights to BF16. Its custom architecture fails on an unsupported stock runtime instead of silently ignoring the edit. Nonzero edited models use a four-observation speculative warm-up and a nine-token draft cap; target verification remains unchanged, while stock and zero edits keep their upstream settings.
 
-A frozen 13-candidate study compared zero plus four strengths across three layer ranges. It used disjoint direction, search, final and capability examples. High-level disallowed requests were used only for activation collection or teacher forcing of harmless refusal text. Generated answers were restricted to benign exact-answer tasks. Data were locally authored and narrow; the corpus is excluded from Git.
+## Scope and evidence
 
-The selected dynamic edit retained all eight search answer checks and improved the held-out exact-answer count from 7/8 to 8/8. Mean refusal-continuation NLL increased from 1.2466 to 2.4369 on search and from 1.1042 to 2.6788 on held-out prompts. This says the supplied refusal continuation became less likely. It does not establish the rate of refusal, compliance, coherence on open-ended requests, or broad coding quality.
+The test100 was used during optimization, so the score is not held out. The pinned Heretic dataset order, 33 keyword markers and 100-token budget are preserved; local generation explicitly uses `think=false`, which differs from upstream automatic prefix handling. Keyword absence does not establish useful completed answers. Twelve exact-answer checks do not establish broad coding, tool-use, vision, MTP acceptance or long-context quality. The speed comparison measures short repeated-prefix generation at context4096.
 
-## Export and serving
-
-The edited artifact is `outputs/abliterated-v1`; the matched quantization-only control is `outputs/quantization-control-v1`. The selected edit specification remains local in `runs/study-v1/selected-edit.json`. Export used the existing global scales and preserved unedited tensors, tokenizer/template, vision and MTP assets. All 2,017 tensor payloads, assets and runtime metadata verified after Ollama import.
-
-| Check | Stock | Dynamic edit | Serialized edit | Quantization control |
-|---|---:|---:|---:|---:|
-| Final plus all capability exact answers | 11/12 | 12/12 | 11/12 | 11/12 |
-| Held-out refusal-continuation mean NLL | 1.1042 | 2.6788 | 2.5504 | 1.1042 |
-
-The serialized edit retains each stock-correct answer but loses the dynamic candidate's extra success. Some capability examples in this expanded comparison were used in search; the 12-task set is not wholly held out. Dynamic-versus-serialized first-token KL across 16 rows has mean 0.1229, median 0.0209 and maximum 0.8731. Quantization-control logits and result records match stock exactly. The nonzero export drift is a practical limit, not a failed byte-copy claim: changed weights were re-quantized.
-
-A direct Ollama run also scored 11/12 for both stock and edited, preserving every stock-correct answer without failed or truncated responses. No generated code was executed.
-
-Two short coding prompts with five warm repeats each measured median decode rates of 75.06 tokens/s stock and 76.65 edited, a 1.0212 ratio, above the prespecified 0.90 threshold. Stock ran first; thermal/power state and MTP acceptance were not independently isolated. This supports the short serving gate, not a speed-improvement claim or long-context release approval.
-
-## Tool and remaining limits
-
-The toolkit now provides inventory, unchanged export, integrity checks, reversible collection/editing, bounded generation and likelihood scoring, resumable gated studies, matrix-bounded merging, matched quantization controls, checkpoint drift comparison and Ollama serving benchmarks. The full suite has 145 passing tests in the installed MLX environment.
-
-This is an experimental ablation checkpoint suitable for local trials. Broad refusal-rate reduction, real coding execution, multi-step tool trajectories, long-generation stability, vision behavior and long-context serving still require evaluation. A likelihood-proxy improvement and twelve exact-answer questions do not establish those properties. Keep stock available for comparison.
-
-Evidence: [study](../research/evidence/study-v1.json), [checkpoint comparison](../research/evidence/checkpoint-comparison-v1.json), [Ollama answer checks](../research/evidence/ollama-quality-v1.json), [serving](../research/evidence/edited-serving-v1.json).
+[Final measurements](../research/evidence/native-final.json) · [Dynamic selection](../research/evidence/heretic-search-v6.json) · [Rejected NVFP4 merge](../research/evidence/heretic-merged-v6-rejected.json) · [Speed optimization history](../research/evidence/native-speed-optimization.json) · [Runtime build and provenance](../native/ollama/README.md) · [Validation protocol](NATIVE_VALIDATION.md) · [Historical first candidate](CANDIDATE-V1.md).

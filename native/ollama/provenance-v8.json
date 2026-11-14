@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "upstream": "https://github.com/ollama/ollama",
+  "upstream_revision": "d63b702609c4300a2ca07be2bdb0adb9834725e5",
+  "upstream_license": "MIT",
+  "patch_authorship": "Original implementation against public Go MLX interfaces; no Heretic implementation copied",
+  "patch_sha256": "0ef5010db569acb6350621fdf4b1dfdc268b4cfbe75835ad76776b12b584bb63",
+  "files": {
+    "create/create.go": "995f6eba07303eaea50b47d77d8b84d87beb2adbcca608aae7f09adbddea4a95",
+    "create/directional_test.go": "78a13d0884943a13b90886d3d7c575bf562668f43b5dedd49e869cf51ec34481",
+    "mlxrunner/model/qwen3_5/qwen3_5.go": "aed643a5e361f604d865f2b032a57f68ee1a39ab9393130ae71da1ab8e759c03",
+    "mlxrunner/model/qwen3_5/directional.go": "22f9b9e049e0468f96240813af62dce67f5aa6ea3ab42aa2bb71883189aa8331",
+    "mlxrunner/model/qwen3_5/directional_test.go": "b894a28a19870e2d2d18383a9e44c3353c352fcfc4cc5566730bc0d035b5642e",
+    "mlxrunner/nn/directional.go": "28e765b3d4f8c2e242c41fa2c1ee782ea6f597e0d98fd913e92a148b927732d5",
+    "mlxrunner/nn/directional_test.go": "3f7f2b30b86a6dbabd0e8bb7ad0f3314322bdde4f2bbbac335a26acb202b859a",
+    "mlx/directional.go": "b66b7ec3582b6fd0e9180251098a9bfa2153b8667f87bf593274e244e972fa33",
+    "mlxrunner/speculate.go": "4f549643097081753e0d76077e39cef2c10002f2edd0a901f4aef077691859ba",
+    "mlxrunner/speculate_depth.go": "cff794bde93331f5d623df54ed36e23a8e77b849b67dba93c9122b19c9ba8cf6",
+    "mlxrunner/speculate_depth_test.go": "855a35dcf3da6994fe41a66d4280866dc6fbfcfd295aa3622d5a14d842583724"
+  },
+  "binary_sha256": "3569a5b4fccfa2c6ee9118c47c917419b64dc152ff1cee0e63ac79e9899c332f",
+  "version": "0.40.16-directional-v8",
+  "go": "1.26.11",
+  "build_command": "go build -ldflags '-X github.com/ollama/ollama/version.Version=0.40.16-directional-v8' -o ./ollama-directional-v8 .",
+  "native_payload_manifest": "payload-manifest.json",
+  "tests": [
+    "go test ./mlxrunner ./mlxrunner/model/qwen3_5 ./mlxrunner/nn ./create -run 'TestDepth|TestAcceptance|TestCost|TestSpeculationMaximum|TestDirectional|TestValidateUnitDirection' -count=1"
+  ],
+  "limits": [
+    "Build-time tests cover tiny numerical fixtures; full-model validation is recorded separately in research/evidence.",
+    "Source fingerprint is provenance metadata; external export/import integrity checks bind the actual base weights",
+    "Custom architecture is unsupported by stock Ollama",
+    "Existing stock app and model store unchanged"
+  ],
+  "created_utc": "2026-11-14T09:40:54.004837+00:00",
+  "optimization": "Fused direction correction/residual Metal kernel with one CGo dispatch. Nonzero custom MTP uses four acceptance samples and maximum nine draft tokens; stock/zero remain ten samples with original drafter limit. Target verification, logits, base weights and MTP weights unchanged."
+}

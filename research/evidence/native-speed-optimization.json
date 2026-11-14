@@ -1,0 +1,468 @@
+{
+  "schema_version": 1,
+  "scope": "All exploratory speed probes v2 through v5, including misses and the controlled single-block pass. Ten warm samples per model on the same two prompts; unchanged comparison threshold 0.9. These probes motivated a separate balanced four-block final confirmation; none is selected as the final speed result.",
+  "trials": [
+    {
+      "runtime": "v2",
+      "report_sha256": "2ceb6d5a8192ed764b584d34eed9f3975d88a30be64693cad152f70ac594dc96",
+      "comparison": {
+        "status": "fail",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.8382579691374126,
+        "baseline_median": 75.67310914338708,
+        "candidate_median": 63.43358678884942,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v2"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 75.67310914338708,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 75.67310914338708,
+          "min_decode_tokens_per_second": 53.06976750521507,
+          "max_decode_tokens_per_second": 81.64529641855559
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 63.43358678884942,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 63.43358678884942,
+          "min_decode_tokens_per_second": 49.811169710064895,
+          "max_decode_tokens_per_second": 81.1524153784605
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v3",
+      "report_sha256": "0f13eee2d09bb5f705898f4d99d3bbd6ab5441b65a3510a3ff836000dd5667b5",
+      "comparison": {
+        "status": "fail",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.8949125905084083,
+        "baseline_median": 69.00328562034807,
+        "candidate_median": 61.75190908809729,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v3"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 69.00328562034807,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 69.00328562034807,
+          "min_decode_tokens_per_second": 48.208211264451165,
+          "max_decode_tokens_per_second": 75.62214369723455
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 61.75190908809729,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 61.75190908809729,
+          "min_decode_tokens_per_second": 48.904493298384985,
+          "max_decode_tokens_per_second": 77.78181902431669
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v4",
+      "report_sha256": "865fa8b15fa7f0ab0bcea8c878e4035916548d75118251ae8241d5c948d22dff",
+      "comparison": {
+        "status": "fail",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.8399629016104551,
+        "baseline_median": 76.63098841716496,
+        "candidate_median": 64.36718738415905,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v4"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 76.63098841716496,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 76.63098841716496,
+          "min_decode_tokens_per_second": 51.28568323519858,
+          "max_decode_tokens_per_second": 83.82864397085214
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 64.36718738415905,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 64.36718738415905,
+          "min_decode_tokens_per_second": 52.64039080366507,
+          "max_decode_tokens_per_second": 82.1509814043767
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v5",
+      "report_sha256": "6ee7558c8ff94ab633c94bef99cb59d2d2ee3cfdfa39fd60ad9d9d1539531ace",
+      "comparison": {
+        "status": "fail",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.8011205724928565,
+        "baseline_median": 77.13502460784792,
+        "candidate_median": 61.79445507308971,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v5"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 77.13502460784792,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 77.13502460784792,
+          "min_decode_tokens_per_second": 51.230101832025035,
+          "max_decode_tokens_per_second": 84.29708359924689
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 61.79445507308971,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 61.79445507308971,
+          "min_decode_tokens_per_second": 51.8905161801437,
+          "max_decode_tokens_per_second": 76.39159729731891
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v5",
+      "resource_control": "Chrome GPU worker paused for both arms, then resumed",
+      "purpose": "Single controlled block; large stock variability prompted the final balanced confirmation",
+      "report_sha256": "a17265cb9281932369566c48a5f43dfa12b06b25e10ac64d91a8881810bf2204",
+      "comparison": {
+        "status": "pass",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 1.2663537179152662,
+        "baseline_median": 51.2444443830782,
+        "candidate_median": 64.89359266701317,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v5"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 51.2444443830782,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 51.2444443830782,
+          "min_decode_tokens_per_second": 48.990159510267816,
+          "max_decode_tokens_per_second": 51.86630186758463
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 64.89359266701317,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 64.89359266701317,
+          "min_decode_tokens_per_second": 52.64781142878665,
+          "max_decode_tokens_per_second": 82.50404984360439
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v5",
+      "resource_control": "Chrome GPU paused equally, restored",
+      "purpose": "Balanced four-block confirmation: speed target missed",
+      "report_sha256": "39848b1df8046e4e80e088cc3d3ad899f0e77642349f6924d8a9a466625c2dc5",
+      "comparison": {
+        "status": "fail",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.8370418666394298,
+        "baseline_median": 78.25560419964071,
+        "candidate_median": 65.50321701426367,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v5"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "block_comparisons": [
+        {
+          "status": "fail",
+          "reasons": [],
+          "minimum_ratio": 0.9,
+          "decode_ratio": 0.8413050017795434,
+          "baseline_median": 78.28489025038839,
+          "candidate_median": 65.86146973141436,
+          "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+          "runtime_versions": {
+            "original": "0.40.16",
+            "isolated": "0.40.16-directional-v5"
+          },
+          "intentional_runtime_comparison": true
+        },
+        {
+          "status": "fail",
+          "reasons": [],
+          "minimum_ratio": 0.9,
+          "decode_ratio": 0.819606471703198,
+          "baseline_median": 78.60433864919833,
+          "candidate_median": 64.42462466083276,
+          "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+          "runtime_versions": {
+            "original": "0.40.16",
+            "isolated": "0.40.16-directional-v5"
+          },
+          "intentional_runtime_comparison": true
+        },
+        {
+          "status": "fail",
+          "reasons": [],
+          "minimum_ratio": 0.9,
+          "decode_ratio": 0.840502057285601,
+          "baseline_median": 78.592768621906,
+          "candidate_median": 66.05738371448322,
+          "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+          "runtime_versions": {
+            "original": "0.40.16",
+            "isolated": "0.40.16-directional-v5"
+          },
+          "intentional_runtime_comparison": true
+        },
+        {
+          "status": "fail",
+          "reasons": [],
+          "minimum_ratio": 0.9,
+          "decode_ratio": 0.8432541718588876,
+          "baseline_median": 77.83748008316773,
+          "candidate_median": 65.63677980711427,
+          "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+          "runtime_versions": {
+            "original": "0.40.16",
+            "isolated": "0.40.16-directional-v5"
+          },
+          "intentional_runtime_comparison": true
+        }
+      ],
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v7",
+      "purpose": "Four-sample acceptance warmup, unchanged target verification",
+      "report_sha256": "ad36f4699557153aedb7c7afa5e315f8c3a991d4122dd9cf4b75f9f4fd4ac19b",
+      "comparison": {
+        "status": "fail",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.869430937012161,
+        "baseline_median": 79.1577675452046,
+        "candidate_median": 68.82221200861807,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v7"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 79.1577675452046,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 79.1577675452046,
+          "min_decode_tokens_per_second": 54.793930789394636,
+          "max_decode_tokens_per_second": 86.17633366924868
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 68.82221200861807,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 68.82221200861807,
+          "min_decode_tokens_per_second": 50.95818321982746,
+          "max_decode_tokens_per_second": 85.17589266195719
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    },
+    {
+      "runtime": "v8",
+      "purpose": "Four-sample acceptance warmup with depth-nine cap, unchanged target verification; preliminary pass awaiting full confirmation",
+      "report_sha256": "5c51b1d85451623aea7f6015892273e17d58b4dffb78fde906a548889926b272",
+      "comparison": {
+        "status": "pass",
+        "reasons": [],
+        "minimum_ratio": 0.9,
+        "decode_ratio": 0.9566269137048955,
+        "baseline_median": 79.09628329876858,
+        "candidate_median": 75.66563337762906,
+        "scope": "Aggregate warm decode throughput only; not quality, fidelity, or all-context release approval.",
+        "runtime_versions": {
+          "original": "0.40.16",
+          "isolated": "0.40.16-directional-v8"
+        },
+        "intentional_runtime_comparison": true
+      },
+      "summaries": {
+        "stock": {
+          "performance_only_median_including_truncated": 79.09628329876858,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 79.09628329876858,
+          "min_decode_tokens_per_second": 54.71506535018242,
+          "max_decode_tokens_per_second": 85.85634793196228
+        },
+        "edited": {
+          "performance_only_median_including_truncated": 75.66563337762906,
+          "samples": 10,
+          "outcomes": {
+            "completed": 10
+          },
+          "valid_samples": 10,
+          "median_decode_tokens_per_second": 75.66563337762906,
+          "min_decode_tokens_per_second": 60.25730584073477,
+          "max_decode_tokens_per_second": 85.06106943430778
+        }
+      },
+      "digests": {
+        "stock": "5642e97495e1a088883805981563dcdc4a040c2f53388b7a41d1f24d3622cf7e",
+        "edited": "9ea5cb5495e59189d30eebd4ba77f01089248af28e68a676e0eaf3c88ca3eb6e"
+      }
+    }
+  ],
+  "draft_seed_experiment": [
+    {
+      "runtime": "v6",
+      "strength": 0.0,
+      "exact_benchmark_responses": true,
+      "summary": {
+        "performance_only_median_including_truncated": 66.74822263709667,
+        "samples": 10,
+        "outcomes": {
+          "completed": 10
+        },
+        "valid_samples": 10,
+        "median_decode_tokens_per_second": 66.74822263709667,
+        "min_decode_tokens_per_second": 53.85664898800792,
+        "max_decode_tokens_per_second": 86.09322940297295
+      },
+      "report_sha256": "2ced99215e26f94798f873cbcc3fdbb33ded50c36db696d7a443c4c0853adac2"
+    },
+    {
+      "runtime": "v6",
+      "strength": -1.0,
+      "exact_benchmark_responses": true,
+      "summary": {
+        "performance_only_median_including_truncated": 66.53025204896281,
+        "samples": 10,
+        "outcomes": {
+          "completed": 10
+        },
+        "valid_samples": 10,
+        "median_decode_tokens_per_second": 66.53025204896281,
+        "min_decode_tokens_per_second": 53.71662845504459,
+        "max_decode_tokens_per_second": 85.72665369040102
+      },
+      "report_sha256": "4c3c3ab1b5dfb92acb1b7c60e71fe5ef005918ffba089d39f0c6ed2f9dc1754b"
+    },
+    {
+      "runtime": "v6",
+      "strength": 1.0,
+      "exact_benchmark_responses": true,
+      "summary": {
+        "performance_only_median_including_truncated": 65.954758722093,
+        "samples": 10,
+        "outcomes": {
+          "completed": 10
+        },
+        "valid_samples": 10,
+        "median_decode_tokens_per_second": 65.954758722093,
+        "min_decode_tokens_per_second": 53.50473532831684,
+        "max_decode_tokens_per_second": 85.97454405355265
+      },
+      "report_sha256": "b36a7415bf59323ddc1880c6e159850a69c2248e379d981960b3e19d49f6861f"
+    }
+  ],
+  "draft_seed_conclusion": "No useful throughput improvement; seed correction was rejected. Main target output and recurrent MTP states were unchanged by design."
+}
