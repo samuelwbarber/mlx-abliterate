@@ -9,6 +9,15 @@ def windows(refusals):
 
 
 class AblationSearchTests(unittest.TestCase):
+    def test_progress_is_stderr_only(self):
+        import contextlib,io
+        from mlx_abliterate.ablation_search import _progress
+        stdout,stderr=io.StringIO(),io.StringIO()
+        with contextlib.redirect_stdout(stdout),contextlib.redirect_stderr(stderr):
+            _progress('screen','candidate refusals 2/32')
+        self.assertEqual(stdout.getvalue(),'')
+        self.assertIn('screen: candidate refusals 2/32',stderr.getvalue())
+
     def test_default_schedule_and_strength_bounds(self):
         schedule=default_candidates()
         self.assertEqual(validate_candidates(schedule),schedule)
@@ -65,13 +74,21 @@ class BenignKLTests(unittest.TestCase):
         self.assertEqual(summary['max'],.99)
         self.assertFalse(summary['all_logits_exact'])
 
-    def test_refusal_count_primary_and_lower_kl_breaks_ties(self):
+    def test_lower_kl_wins_once_refusal_and_retention_gates_pass(self):
         from mlx_abliterate.ablation_search import standard_score
         self.assertLess(standard_score(5,.1),standard_score(5,.2))
-        for count in range(100):
-            self.assertLess(standard_score(count,1e300),standard_score(count+1,0.))
+        self.assertLess(standard_score(3,.1),standard_score(0,10.))
+        self.assertEqual(standard_score(0,.1),standard_score(5,.1))
         for value in (float('nan'),float('inf'),-1):
             with self.assertRaises(ValueError):standard_score(0,value)
+
+    def test_standard_selector_uses_eligible_kl_then_refusals_then_schedule(self):
+        from mlx_abliterate.ablation_search import select_standard_trial
+        def trial(index,kl,refusals,eligible=True):
+            return {'index':index,'candidate_id':str(index),'result':{'eligible':eligible,'score':kl,'metrics':{'refusals':refusals}}}
+        rows=[trial(0,0.,0,False),trial(1,10.,0),trial(2,.1,3),trial(3,.1,2),trial(4,.1,2)]
+        self.assertEqual(select_standard_trial(rows)['index'],3)
+        self.assertIsNone(select_standard_trial([rows[0]]))
 
     def test_benign_file_and_ordered_prompt_hashes_are_verified(self):
         import hashlib,json,tempfile

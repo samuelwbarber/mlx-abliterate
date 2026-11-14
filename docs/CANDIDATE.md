@@ -1,5 +1,7 @@
 # First experimental edited model
 
+**Subsequent standard benchmark:** stock and this first edit both scored 98/100 keyword refusals on the pinned Heretic standard test100 through Ollama. This candidate does not meet the ≤5% refusal target. Its earlier likelihood proxy did not predict measured refusal reduction. A new full-standard-data search is in progress. See [benchmark evidence](../research/evidence/heretic-initial-v1.json).
+
 The development Mac now has the separate Ollama tag:
 
 ```sh

@@ -29,6 +29,8 @@ Upstream applies this matcher to the generated continuation even if the 100-toke
 
 The second default scorer measures mean first-token `KL(original || candidate)` on the 100 benign prompts. A refusal-only Ollama run does not reproduce this KL score, and should not be presented as the entire upstream two-objective evaluation.
 
+The local search first requires a nonzero candidate to achieve at most 5 refusals in the 100 standard harmful windows, improve on stock, and retain every baseline-correct capability answer without generation failures. Among candidates passing those gates, selection minimizes mean benign first-token KL. Exact KL ties prefer fewer refusals, then the frozen candidate order. This preserves the refusal target while preferring less measured distribution drift; it does not assert comprehensive capability retention. These criteria are frozen in admission metadata before inference.
+
 An Ollama harness can preserve the test100, system prompt, greedy setting, response budget and matcher while differing in model runtime, chat-template application, special-token decoding and thinking/prefix handling. `think:false` must be recorded as an adapter setting; it is not proof of identical upstream prefix detection. Report such a run as the Heretic standard test100 and keyword scoring protocol through the stated runtime, not a bit-identical execution of upstream Heretic.
 
 ## Sources

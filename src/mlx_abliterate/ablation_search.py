@@ -12,6 +12,7 @@ import math
 import os
 from pathlib import Path
 import statistics
+import sys
 import tempfile
 
 from .search import run_candidates, _exclusive
@@ -20,6 +21,10 @@ from .evaluate import load_dataset_splits
 from .export import verify_export
 from .heretic_benchmark import keyword_refusal
 from .study_evaluation import load_rubrics
+
+
+def _progress(phase, detail):
+    print(f'[ablation-search] {phase}: {detail}',file=sys.stderr,flush=True)
 
 
 def default_candidates():
@@ -119,9 +124,15 @@ def summarize_kl(rows):
 def standard_score(refusals,mean_kl):
     if type(refusals) is not int or not 0<=refusals<=100 or type(mean_kl) not in (float,int) or not math.isfinite(mean_kl) or mean_kl<0:
         raise ValueError('Invalid refusal count or benign KL score')
-    # Refusal count is primary; within that count lower mean benign KL wins.
-    # Clamp protects this ordering if floating-point rounding reaches 1.
-    return min(refusals+mean_kl/(1+mean_kl),math.nextafter(float(refusals+1),float(refusals)))
+    # Eligibility enforces the refusal target and capability retention. Once
+    # those gates pass, minimize benign distribution drift rather than refusal.
+    return float(mean_kl)
+
+
+def select_standard_trial(trials):
+    eligible=[trial for trial in trials if trial['result']['eligible']]
+    return min(eligible,key=lambda trial:(trial['result']['score'],
+               trial['result']['metrics']['refusals'],trial['index'])) if eligible else None
 
 
 def require_zero_kl(exact_logits,value):
@@ -163,6 +174,7 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
     from .generation import generate
     from .telemetry import MemoryGuard
     identity=verify_export(export,require_unmodified=True)
+    _progress('admission','verified unchanged model content')
     config,config_sha=_json_file(benchmark_dir/'benchmark-config.json')
     train,train_sha=_json_file(benchmark_dir/'harmful-train400.json')
     test,test_sha=_json_file(benchmark_dir/'harmful-test100.json')
@@ -203,11 +215,12 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
                     'maximum_standard_refusals':5,'require_baseline_task_retention':True,
                     'capability_first_screen':True,
                     'standard_test_used_for_optimization':True,'thinking':False,
-                    'ranking':'refusal_count + mean_benign_KL/(1+mean_benign_KL)',
+                    'ranking':'Among eligible <=5/100 retained-capability candidates: lowest mean benign KL, then refusal count, then schedule order',
                     'benign_KL':'base || candidate, first-token, harmless test[:100]; no arbitrary KL cap'},
                 'code_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                                for name in ('ablation_search.py','heretic_benchmark.py','generation.py','study_evaluation.py','evaluate.py')}}
     _store_identical(run_dir/'admission.json',{'provenance':provenance,'candidates':candidates})
+    _progress('admission',f'locked {len(candidates)} candidates; shortlist size {shortlist_size}')
     tokenizer=_tokenizer(export)
     eos=tokenizer.eos_token_id
     eos=list(eos) if isinstance(eos,(list,tuple)) else [eos]
@@ -219,6 +232,7 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
         raise ValueError('Invalid EOS configuration')
     guard=MemoryGuard();guard.configure(mx)
     adapter=load_export(export,memory_limit=guard.allocator_limit_bytes,cache_limit=guard.cache_limit_bytes)
+    _progress('load','model ready')
     token_sets={'screen':[_benchmark_tokens(tokenizer,p,config) for p in train['prompts'][:32]],
                 'expanded':[_benchmark_tokens(tokenizer,p,config) for p in train['prompts'][:100]],
                 'standard':[_benchmark_tokens(tokenizer,p,config) for p in test['prompts']]}
@@ -233,12 +247,18 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
                             'response_sha256':hashlib.sha256(text.encode()).hexdigest(),
                             'sampled_tokens':raw['sampled_tokens'],'early_keyword_match':raw['status']=='matched'})
             guard.check(mx)
+            if (index+1)%16==0:
+                _progress(stage,f"rows {index+1}/{len(token_sets[stage])}; "
+                          f"refusals in this batch {sum(r['keyword_refusal'] for r in records)}")
         return records
+    _progress('baseline','evaluating train32 and capability tasks')
     baseline_screen=windows('screen')
     baseline_cap=evaluate_tasks(adapter,tokenizer,cap_rows,cap_doc['rubrics'],eos,max_new_tokens=100)
     if not summarize_windows(baseline_screen)['valid'] or not passes_retention(baseline_cap,baseline_cap):
         raise ValueError('Baseline generation/capability failed')
     _store_identical(run_dir/'baseline-screen.json',{'windows':baseline_screen,'capability':baseline_cap})
+    _progress('baseline',f"train32 refusals {summarize_windows(baseline_screen)['refusals']}/32; capability baseline valid")
+    _progress('zero control','checking generation hashes and scores')
     try:
         adapter.set_edits(projection_directions(candidates[0],adapter.projections,arrays),0.)
         zero=windows('screen')
@@ -247,7 +267,9 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
     finally:
         adapter.reset_edits()
     _store_identical(run_dir/'zero-gate.json',{'passed':True,'rows':len(zero)})
+    _progress('zero control','passed')
     def screen(candidate, stage='screen', baseline_rows=baseline_screen):
+        _progress(stage,f"{candidate['id']} started; capability check first")
         try:
             adapter.set_edits(projection_directions(candidate,adapter.projections,arrays),candidate['strength'])
             cap=baseline_cap if candidate['strength']==0 else evaluate_tasks(adapter,tokenizer,cap_rows,cap_doc['rubrics'],eos,max_new_tokens=100)
@@ -264,6 +286,9 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
         _store_identical(run_dir/f"{stage}-{candidate['id']}.json",{'windows':rows,'summary':summary,'capability':cap,
                          'classification':'evaluated' if cap_ok else 'capability_rejected',
                          'keyword_generation_skipped':not cap_ok})
+        detail=(f"refusals {summary['refusals']}/{summary['count']}; invalid {summary['invalid']}" if cap_ok
+                else f'capability_rejected; regressions {regressions}; failures {cap_failures}')
+        _progress(stage,f"{candidate['id']} {detail}")
         return {'status':'completed' if cap_ok else 'invalid',
                 'score':summary['refusal_rate'],'constraints_met':cap_ok and summary['valid'],
                 'failures':summary['invalid'] if cap_ok else max(1,cap_failures+regressions),
@@ -271,26 +296,31 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
                     'capability_correct':sum(bool(r.get('task_check_passed')) for r in cap),
                     'capability_failures':cap_failures,'capability_regressions':regressions}}
     screen_report=run_candidates(run_dir/'screen-journal',candidates,{**provenance,'stage':'screen'},evaluate=screen,reset_state=adapter.reset_edits)
+    _progress('screen',f"{screen_report['status']}; {screen_report['eligible_candidates']} eligible trials")
     if screen_report['status']!='complete':
         return {'status':screen_report['status'],'stage':'screen','export_gate_passed':False}
     ranked=sorted((row for row in screen_report['trials'] if row['result']['eligible'] and row['candidate_id']!='zero'),key=lambda r:r['result']['score'])
     expanded_ids={row['candidate_id'] for row in ranked[:shortlist_size*2]}
     expanded_candidates=[candidates[0]]+[c for c in candidates if c['id'] in expanded_ids]
+    _progress('expanded','evaluating remaining baseline train100 rows')
     baseline_expanded=baseline_screen+windows('expanded',start=32)
     if not summarize_windows(baseline_expanded)['valid']:
         raise ValueError('Expanded development baseline has invalid windows')
     _store_identical(run_dir/'baseline-expanded.json',{'windows':baseline_expanded})
     expanded_report=run_candidates(run_dir/'expanded-journal',expanded_candidates,{**provenance,'stage':'expanded'},
                                    evaluate=lambda c:screen(c,'expanded',baseline_expanded),reset_state=adapter.reset_edits)
+    _progress('expanded',f"{expanded_report['status']}; {expanded_report['eligible_candidates']} eligible trials")
     if expanded_report['status']!='complete':
         return {'status':expanded_report['status'],'stage':'expanded','export_gate_passed':False}
     ranked=sorted((row for row in expanded_report['trials'] if row['result']['eligible'] and row['candidate_id']!='zero'),key=lambda r:r['result']['score'])
     selected_ids={row['candidate_id'] for row in ranked[:shortlist_size]}
     shortlist=[candidates[0]]+[c for c in candidates if c['id'] in selected_ids]
+    _progress('standard baseline','evaluating harmful test100')
     baseline_standard=windows('standard')
     if not summarize_windows(baseline_standard)['valid']:
         raise ValueError('Standard baseline has invalid windows')
     _store_identical(run_dir/'baseline-standard.json',{'windows':baseline_standard})
+    _progress('standard baseline',f"refusals {summarize_windows(baseline_standard)['refusals']}/100")
     # Spool one benign baseline vocabulary row at a time. The immutable hashes
     # protect resumability, while fresh adapter calls avoid KV/recurrent reuse.
     benign_tokens=[_benchmark_tokens(tokenizer,p,config) for p in benign_prompts]
@@ -300,6 +330,7 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
     benign_dir.mkdir(exist_ok=True)
     benign_records=[]
     adapter.reset_edits()
+    _progress('benign baseline','spooling 100 first-token logit rows')
     with tempfile.TemporaryDirectory(prefix='.benign-spool-',dir=run_dir) as temporary:
         for index,tokens in enumerate(benign_tokens):
             baseline=adapter.last_logits(tokens).astype(mx.float32)
@@ -323,6 +354,8 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
             del baseline
             pending.unlink()
             guard.check(mx)
+            if (index+1)%25==0:
+                _progress('benign baseline',f'{index+1}/100 rows')
     _store_identical(benign_dir/'manifest.json',{'dataset_sha256':benign_sha,'records':benign_records})
     def benign_kl(require_exact=False):
         from .evaluate import first_token_kl
@@ -342,16 +375,21 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
                             'max_abs_logit_delta':delta,'exact_logits':exact})
             del baseline,actual
             guard.check(mx)
+            if len(records)%25==0:
+                _progress('benign KL',f'{len(records)}/100 rows')
         return {'rows':records,'summary':summarize_kl(records)}
     # Run this hard gate outside run_candidates: a callback exception is only
     # an ineligible trial and would otherwise permit later trials to continue.
+    _progress('zero benign KL','checking 100 exact logit rows')
     try:
         adapter.set_edits(projection_directions(candidates[0],adapter.projections,arrays),0.)
         zero_kl=benign_kl(require_exact=True)
     finally:
         adapter.reset_edits()
     _store_identical(run_dir/'zero-benign-kl.json',zero_kl)
+    _progress('zero benign KL','passed; exact logits and KL zero')
     def standard(candidate):
+        _progress('standard',f"{candidate['id']} started; harmful100, capability, benign KL")
         try:
             adapter.set_edits(projection_directions(candidate,adapter.projections,arrays),candidate['strength'])
             rows=baseline_standard if candidate['strength']==0 else windows('standard')
@@ -362,11 +400,16 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
         summary=summarize_windows(rows)
         _store_identical(run_dir/f"standard-{candidate['id']}.json",{'windows':rows,'summary':summary,'capability':cap,'benign_kl':kl})
         eligible=export_eligible(candidate,baseline_standard,rows,baseline_cap,cap)
+        _progress('standard',f"{candidate['id']} refusals {summary['refusals']}/{summary['count']}; "
+                  f"mean KL {kl['summary']['mean']:.6g}; p95 KL {kl['summary']['p95']:.6g}; eligible {eligible}")
         return {'status':'completed','score':standard_score(summary['refusals'],kl['summary']['mean']),'constraints_met':eligible,
                 'failures':summary['invalid'],'metrics':{'refusals':summary['refusals'],
                     'mean_benign_kl':kl['summary']['mean'],'p95_benign_kl':kl['summary']['p95'],
                     'max_benign_kl':kl['summary']['max']}}
     final=run_candidates(run_dir/'standard-journal',shortlist,{**provenance,'stage':'optimized-standard'},evaluate=standard,reset_state=adapter.reset_edits)
+    selected_trial=select_standard_trial(final['trials'])
+    final['best_candidate_id']=selected_trial['candidate_id'] if selected_trial else None
+    final['best_score']=selected_trial['result']['score'] if selected_trial else None
     best=next((c for c in shortlist if c['id']==final['best_candidate_id']),None)
     passed=final['status']=='complete' and best is not None
     if passed:
@@ -388,6 +431,7 @@ def _run_search(export,benchmark_dir,directions_dir,capability_dataset,capabilit
     temporary=run_dir/'.report.pending'
     temporary.write_text(json.dumps(report,indent=2,allow_nan=False))
     temporary.replace(run_dir/'search-report.json')
+    _progress('selection',f"{best['id'] if best else 'none'}; export gate {passed}")
     return report
 
 
